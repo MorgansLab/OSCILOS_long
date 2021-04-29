@@ -22,7 +22,7 @@ function varargout = GUI_INI_BC(varargin)
 
 % Edit the above text to modify the response to help GUI_INI_BC
 
-% Last Modified by GUIDE v2.5 16-Jun-2014 11:58:47
+% Last Modified by GUIDE v2.5 04-Jul-2019 13:48:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,7 +83,8 @@ switch indexEdit
             % Initialization
             GUI_INI_BC_Initialization(hObject, eventdata, handles)
         end
-        % Update handles structure
+        guidata(hObject, handles);
+        handles.output = hObject;
         guidata(hObject, handles);
         if dontOpen
            disp('-----------------------------------------------------');
@@ -92,7 +93,7 @@ switch indexEdit
            disp('parent directory!')
            disp('-----------------------------------------------------');
         else
-           uiwait(hObject);
+%            uiwait(hObject);
         end
     case 1
         global CI
@@ -116,7 +117,8 @@ switch indexEdit
         handles.indexApp = 0;
         guidata(hObject, handles);  
         GUI_INI_BC_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
+        handles.output = hObject;
+        guidata(hObject, handles);
 end
 
 function GUI_INI_BC_Initialization(varargin)
@@ -139,9 +141,13 @@ try
         CI.BC.Phi1          = 0;
         CI.BC.A2            = 1;
         CI.BC.Phi2          = 0;
-        CI.BC.ET.pop_type_model             = 1;
+        CI.BC.ET.pop_type_model             = 1; 
         CI.BC.ET.Dispersion.Delta_tauCs     = 0;
-        CI.BC.ET.Dissipation.k              = 0; 
+        CI.BC.ET.Dissipation.k              = 0;
+        CI.BC.ET.pop_type_model_TEMP        = 1; % B.B. 10/07/2019 START
+        CI.BC.ET.Dispersion.Delta_tauCs_TEMP= 0; %TEMPs used to store input from entropy window
+        CI.BC.ET.Dissipation.k_TEMP         = 0; %that is not retained if the BC window is exited/cancelled
+        CI.BC.ET.hasChanged = false; % B.B. 10/07/2019 STOP
     end
 catch
 end
@@ -153,8 +159,8 @@ set(0, 'units', 'points');
 screenSize  = get(0, 'ScreenSize');                             % get the screen size
 sW          = handles.sW;                                       % screen width
 sH          = handles.sH;                                       % screen height
-FigW        = sW.*3/5;                                          % window width
-FigH        = sH.*2/4;                                          % window height
+FigW        = sW.*4/5;                                          % window width
+FigH        = sH.*5/9;                                          % window height
 set(handles.figure,     'units', 'points',...
                         'position',[(screenSize(3)-FigW)./2 (screenSize(4)-FigH)./2 FigW FigH],...
                         'name','Boundary condition configurations',...
@@ -164,7 +170,7 @@ set(handles.figure,     'units', 'points',...
 set(handles.uipanel_axes,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*8.5/20 FigH*2.5/20 FigW*11/20 FigH*17.25/20],...
+                        'position',[FigW*10.5/20 FigH*2.0/20 FigW*9/20 FigH*17.75/20],...
                         'Title','Transfer function of reflection coefficient',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -201,7 +207,7 @@ guidata(hObject, handles);
 % pannels Inlet
 set(handles.uipanel_Inlet,   'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*11.25/20 FigW*7.5/20 FigH*8.5/20],...
+                        'position',[FigW*0.5/20 FigH*11.0/20 FigW*9.5/20 FigH*8.75/20],...
                         'Title','Inlet configuration',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -229,7 +235,8 @@ set(handles.pop_type_Inlet,...
                                     'Choked';...
                                     'User defined (Amp. and T.D.)...';...
                                     'User defined (Amp. and Phase)...';...
-                                    'Transfer function model'},...
+                                    'Transfer function model from numerators and denominators';...
+                                    'Transfer function model loaded from external mat file'},...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','left',...
                         'enable','on',...
@@ -287,12 +294,21 @@ set(handles.edit_add_Inlet,...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','right',...
                         'visible','on');  
+set(handles.pb_inlet,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*1/10 pH*0.75/10 pW*9.5/10 pH*1.5/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','Load the transfer function model and time delay',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','right',...
+                        'Enable','on'); 
 %----------------------------------------
 % pannels Outlet
 set(handles.uipanel_Outlet,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*2.5/20 FigW*7.5/20 FigH*8.5/20],...
+                        'position',[FigW*0.5/20 FigH*2.0/20 FigW*9.5/20 FigH*8.75/20],...
                         'Title','Outlet configuration',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -321,7 +337,9 @@ set(handles.pop_type_Outlet,...
                                     'Choked';...
                                     'User defined (Amp. and T.D.)...';...
                                     'User defined (Amp. and Phase)...';...
-                                    'Transfer function model'},...
+                                    'Transfer function model from numerators and denominators';...
+                                    'Transfer function model loaded from external mat file';...
+                                    'Heat exchanger + downstream section'},... % B.B. 09/07/2019
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','left',...
                         'Enable','on',...
@@ -380,12 +398,28 @@ set(handles.edit_add_Outlet,...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','right',...
                         'visible','on'); 
+set(handles.pb_outlet,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*0.75/10 pW*8.5/10 pH*1.5/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','Load the transfer function model and time delay',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','right',...
+                        'Enable','on'); 
+set(handles.heat_Exchanger_Setup_Button,... % B.B. 04/07/2019 START
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*5/10 pW*3.5/10 pH*2/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','right'); % B.B. 04/07/2019 STOP
 %----------------------------------------
 % pannel AOC                   
 set(handles.uipanel_AOC,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*2/20],...
+                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*1.75/20],...
                         'Title','',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -398,41 +432,53 @@ pH=pannelsize(4);
 set(handles.pb_Apply,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.4/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*1/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Plot',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_SaveFig,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2.8/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save figure',...
                         'backgroundcolor',handles.bgcolor{3},...
-                        'enable','off'); 
+                        'enable','off',...
+                        'visible','off'); 
 set(handles.pb_OK,       'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.2/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','OK',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_Cancel,....
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*7.6/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*7/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Cancel',...
                         'backgroundcolor',handles.bgcolor{3});
 %
 assignin('base','CI',CI);                   % save the current information to the workspace
 guidata(hObject, handles);
-Fcn_GUI_INI_BC_POP1_update(hObject) 
+%B.B. 10/07/2019
+CI.BC.ET.hasChanged = false; %B.B. 10/07/2019 - reset the flag used to indicate that
+                                              % the entropy convection
+                                              % properties have changed in
+                                              % this session
+CI.BC.ET.pop_type_model_TEMP             = CI.BC.ET.pop_type_model;
+CI.BC.ET.Dispersion.Delta_tauCs_TEMP     = CI.BC.ET.Dispersion.Delta_tauCs;
+CI.BC.ET.Dissipation.k_TEMP              = CI.BC.ET.Dissipation.k;
+isInitialising = true; % B.B. 09/07/2019 - tells Fcn_GUI_INI_BC_POP2_update 
+                     % NOT to open entropy window during initialisation of 
+                     % the BC GUI!
+Fcn_GUI_INI_BC_POP1_update(hObject)
 handles=guidata(hObject);
 guidata(hObject, handles);
-Fcn_GUI_INI_BC_POP2_update(hObject) 
+Fcn_GUI_INI_BC_POP2_update(hObject,isInitialising) % B.B. 09/07/2019
 handles=guidata(hObject);
 guidata(hObject, handles);
-Fcn_GUI_INI_BC_PLOT_BC_TF(hObject)
+Fcn_GUI_INI_BC_PLOT_BC_TF(hObject) % B.B. 10/07/2019
 handles=guidata(hObject);
 guidata(hObject, handles);
 
@@ -451,11 +497,12 @@ switch pop_type_Inlet
             set(handles.text_Amp_Inlet,             'visible','on',...
                                                     'string','Amplitude [-]'); 
             set(handles.edit_td_Inlet,              'visible','on',...
-                                                    'string', num2str(CI.BC.tau_d1));
+                                                    'string', num2str(CI.BC.tau_d1*1e3));
             set(handles.text_td_Inlet,              'visible','on',...
                                                     'string','Time delay [ms]:');
             set(handles.edit_add_Inlet,             'visible','off');
             set(handles.text_add_Inlet,             'visible','off');
+            set(handles.pb_inlet,                   'visible','off');
     case 5
             set(handles.edit_Amp_Inlet,             'visible','on',...
                                                     'string', num2str(CI.BC.A1));
@@ -467,6 +514,7 @@ switch pop_type_Inlet
                                                     'string','Phase [deg]:');
             set(handles.edit_add_Inlet,             'visible','off');
             set(handles.text_add_Inlet,             'visible','off');
+            set(handles.pb_inlet,                   'visible','off');
     case 6
         handles.indexApp = Fcn_GUI_INI_BC_helpdlg(handles.indexApp);
         strNum = ['[' num2str(CI.BC.num1) ']'];
@@ -483,6 +531,18 @@ switch pop_type_Inlet
                                                     'string', num2str(CI.BC.tau_d1.*1e3));
             set(handles.text_add_Inlet,             'visible','on',...
                                                     'string','Time delay [ms]:');
+            set(handles.pb_inlet,                   'visible','off');
+    case 7
+            set(handles.edit_Amp_Inlet,             'visible','off');
+            set(handles.text_Amp_Inlet,             'visible','off'); 
+            set(handles.edit_td_Inlet,              'visible','on',...
+                                                    'string', num2str(CI.BC.tau_d1.*1e3));
+            set(handles.text_td_Inlet,              'visible','on',...
+                                                    'string','Time delay [ms]:');
+            set(handles.edit_add_Inlet,             'visible','off');
+            set(handles.text_add_Inlet,             'visible','off');
+            set(handles.pb_inlet,                   'visible','on');
+            
     otherwise
             set(handles.edit_Amp_Inlet,             'visible','off');
             set(handles.text_Amp_Inlet,             'visible','off'); 
@@ -490,11 +550,13 @@ switch pop_type_Inlet
             set(handles.text_td_Inlet,              'visible','off');   
             set(handles.edit_add_Inlet,             'visible','off');
             set(handles.text_add_Inlet,             'visible','off');
+            set(handles.pb_inlet,                   'visible','off');
 end
 guidata(hObject, handles);
 % ----------------------
 function Fcn_GUI_INI_BC_POP2_update(varargin)
 hObject = varargin{1};
+isInitialising = varargin{2}; % B.B. 09/07/2019 - used to suppress entropy window on GUI initialisation
 handles = guidata(hObject);
 global CI
 pop_type_Outlet     = get(handles.pop_type_Outlet,'Value');
@@ -505,11 +567,13 @@ switch pop_type_Outlet
             set(handles.text_Amp_Outlet,            'visible','on',...
                                                     'string','Amplitude [-]'); 
             set(handles.edit_td_Outlet,             'visible','on',...
-                                                    'string', num2str(CI.BC.tau_d2));
+                                                    'string', num2str(CI.BC.tau_d2*1e3));
             set(handles.text_td_Outlet,             'visible','on',...
                                                     'string','Time delay [ms]:');
             set(handles.edit_add_Outlet,            'visible','off');
             set(handles.text_add_Outlet,            'visible','off');
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
     case 5
             set(handles.edit_Amp_Outlet,            'visible','on',...
                                                     'string', num2str(CI.BC.A2));
@@ -521,6 +585,8 @@ switch pop_type_Outlet
                                                     'string','Phase [deg]:');
             set(handles.edit_add_Outlet,            'visible','off');
             set(handles.text_add_Outlet,            'visible','off');
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
     case 6
             handles.indexApp = Fcn_GUI_INI_BC_helpdlg(handles.indexApp);
             strNum = ['[' num2str(CI.BC.num2) ']'];
@@ -537,6 +603,8 @@ switch pop_type_Outlet
                                                     'string', num2str(CI.BC.tau_d2.*1e3));
             set(handles.text_add_Outlet,            'visible','on',...
                                                     'string','Time delay [ms]:');
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
     case 3
             set(handles.edit_Amp_Outlet,             'visible','off');
             set(handles.text_Amp_Outlet,             'visible','off'); 
@@ -545,19 +613,87 @@ switch pop_type_Outlet
             set(handles.edit_add_Outlet,             'visible','off');
             set(handles.text_add_Outlet,             'visible','off');
             
-            % Construct a questdlg with three options
-            choice = questdlg('Include indirect noise from entropy waves?', ...
-                'Indirect noise','Yes','No','No');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    GUI_INI_BC_Entropy('GUI_INI_BC', handles.figure);
-                case 'No'
-                    CI.BC.ET.pop_type_model             = 1;
-                    CI.BC.ET.Dispersion.Delta_tauCs     = 0;
-                    CI.BC.ET.Dissipation.k              = 0; 
-                    assignin('base','CI',CI);                   % save the current information to the workspace
+            if isInitialising == false % B.B. 09/07/2019 -> DO NOT run when the BC window is initialising
+                % Construct a questdlg with three options
+                choice = questdlg('Include indirect noise from entropy waves?', ...
+                    'Indirect noise','Yes','No','No');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        GUI_INI_BC_Entropy('GUI_INI_BC', handles.figure);
+                    case 'No'
+                        % B.B. 10/07/2019 START - now it sets to temp
+                        % variables, which are only properly saved when
+                        % 'OK' or 'plot' buttons are pressed
+                        CI.BC.ET.pop_type_model_TEMP             = 1;
+                        CI.BC.ET.Dispersion.Delta_tauCs_TEMP     = 0;
+                        CI.BC.ET.Dissipation.k_TEMP              = 0; 
+                        % B.B. 10/07/2019 STOP
+                        assignin('base','CI',CI);                   % save the current information to the workspace
+                end
+            end % B.B. 09/07/2019
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
+    case 7
+            set(handles.edit_Amp_Outlet,             'visible','off');
+            set(handles.text_Amp_Outlet,             'visible','off'); 
+            set(handles.edit_td_Outlet,              'visible','on',...
+                                                    'string', num2str(CI.BC.tau_d2.*1e3));
+            set(handles.text_td_Outlet,              'visible','on',...
+                                                    'string','Time delay [ms]:');
+            set(handles.edit_add_Outlet,             'visible','off');
+            set(handles.text_add_Outlet,             'visible','off');
+            set(handles.pb_outlet,                   'visible','on');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
+    case 8 % B.B. 08/07/2019 START - if the 'heat' exchanger option is selected:
+            set(handles.edit_Amp_Outlet,             'visible','off');
+            set(handles.text_Amp_Outlet,             'visible','off'); 
+            set(handles.edit_td_Outlet,              'visible','off');
+            set(handles.text_td_Outlet,              'visible','off');   
+            set(handles.edit_add_Outlet,             'visible','off');
+            set(handles.text_add_Outlet,             'visible','off');
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','on');
+            % check if the h.x. has been previously specified : 
+            if (~isfield(CI.BC,'hx')) || (~isfield(CI.BC.hx,'isSetup') || CI.BC.hx.isSetup == false)
+                %if not, set to default values
+                CI.BC.hx.tubeDiameter = 0.003;
+                CI.BC.hx.Xp = 1.7;
+                CI.BC.hx.Xl = 1.3;
+                CI.BC.hx.nRows = 2;
+                CI.BC.hx.qm = 100000;
+                CI.BC.hx.htfNumerator = [1,0.1];
+                CI.BC.hx.htfDenominator = [1,0.1];
+                CI.BC.hx.ductLength = 0.2;
+                CI.BC.hx.endCondition = 2; % 1 - choked, 2 - open, 3 - closed
+                CI.BC.hx.isSetup = true;  
+                CI.BC.hx.meanFlowCalc = false;
+                CI.BC.hx.lossCoeff = 0.7;
+                CI.BC.hx.ET.pop_type_model = 1;
+                CI.BC.hx.ET.Dissipation.k = 0;
+                CI.BC.hx.ET.Dispersion.Delta_tauCs = 0;
+                assignin('base','CI',CI);                   % save the current information to the workspace
             end
+            if isInitialising == false
+                % Construct a questdlg with three options
+                choice = questdlg('Include indirect noise from entropy waves?', ...
+                    'Indirect noise','Yes','No','No');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        GUI_INI_BC_Entropy('GUI_INI_BC', handles.figure);
+                    case 'No'
+                        % B.B. 10/07/2019 START - now it sets to temp
+                        % variables, which are only properly saved when
+                        % 'OK' or 'plot' buttons are pressed
+                        CI.BC.ET.pop_type_model_TEMP             = 1;
+                        CI.BC.ET.Dispersion.Delta_tauCs_TEMP     = 0;
+                        CI.BC.ET.Dissipation.k_TEMP              = 0; 
+                        % B.B. 10/07/2019 STOP
+                        assignin('base','CI',CI);                   % save the current information to the workspace
+                end
+            end
+            % B.B. 08/07/2019 STOP
     otherwise
             set(handles.edit_Amp_Outlet,             'visible','off');
             set(handles.text_Amp_Outlet,             'visible','off'); 
@@ -565,6 +701,8 @@ switch pop_type_Outlet
             set(handles.text_td_Outlet,              'visible','off');   
             set(handles.edit_add_Outlet,             'visible','off');
             set(handles.text_add_Outlet,             'visible','off');
+            set(handles.pb_outlet,                   'visible','off');
+            set(handles.heat_Exchanger_Setup_Button,         'visible','off'); % B.B. 04/07/2019
 end
 guidata(hObject, handles);
 
@@ -599,6 +737,10 @@ switch CI.BC.StyleInlet
         M1              = CI.TP.M_mean(1,1);
         TEMP            = gamma*M1/(1+(gamma-1)*M1^2);
         %
+        %%% test of boundary conditions in Coh See's paper, CST 2013, added
+        %%% in 2015-02-11
+%         TEMP = M1;
+        %%% END
         CI.BC.num1      = (1-TEMP)/(1+TEMP);
         CI.BC.den1      = 1;
         CI.BC.tau_d1    = 0;
@@ -620,6 +762,9 @@ switch CI.BC.StyleInlet
         CI.BC.num1      = str2num(get(handles.edit_Amp_Inlet,'String'));
         CI.BC.den1      = str2num(get(handles.edit_td_Inlet,'String'));
         CI.BC.tau_d1    = str2num(get(handles.edit_add_Inlet, 'String'))./1000; 
+    case 7
+        [CI.BC.num1,CI.BC.den1] = tfdata(handles.sysFit1,'v');
+        CI.BC.tau_d1    = str2num(get(handles.edit_td_Inlet, 'String'))./1000; 
 end
 assignin('base','CI',CI);                   % save the current information to the workspace
 %
@@ -660,8 +805,23 @@ switch CI.BC.StyleOutlet
         CI.BC.num2          = str2num(get(handles.edit_Amp_Outlet,'String'));
         CI.BC.den2          = str2num(get(handles.edit_td_Outlet,'String'));
         CI.BC.tau_d2        = str2num(get(handles.edit_add_Outlet, 'String'))./1000;
+    case 7
+        [CI.BC.num2,CI.BC.den2] = tfdata(handles.sysFit2,'v');
+        CI.BC.tau_d2    = str2num(get(handles.edit_td_Outlet, 'String'))./1000; 
 end
-assignin('base','CI',CI);                   % save the current information to the workspace
+switch CI.BC.StyleOutlet
+    % B.B. 10/07/2019 START
+    case {3,8} % if using choked outlet or HX then need to update the entropy convection parameters 
+        CI.BC.ET.pop_type_model         = CI.BC.ET.pop_type_model_TEMP;
+        CI.BC.ET.Dissipation.k          = CI.BC.ET.Dissipation.k_TEMP;
+        CI.BC.ET.Dispersion.Delta_tauCs = CI.BC.ET.Dispersion.Delta_tauCs_TEMP;
+    % B.B. 10/07/2019 STOP
+    otherwise
+        CI.BC.ET.pop_type_model         = 1;
+        CI.BC.ET.Dissipation.k          = 0;
+        CI.BC.ET.Dispersion.Delta_tauCs = 0e-3;
+end
+assignin('base','CI',CI);                   % save the current information to the workspace        
 guidata(hObject, handles);
 
 
@@ -683,7 +843,8 @@ function pop_type_Outlet_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.pb_SaveFig,'enable','off');
-Fcn_GUI_INI_BC_POP2_update(hObject)
+initialising = false; % B.B. 09/07/2019
+Fcn_GUI_INI_BC_POP2_update(hObject,initialising) % B.B. 09/07/2019
 handles = guidata(hObject);
 guidata(hObject, handles);
 
@@ -698,8 +859,9 @@ function varargout = GUI_INI_BC_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = [];
-delete(hObject);
+try
+varargout{1} = handles.output;
+end
 
 %
 % --- Executes on selection change in pop_Plot.
@@ -738,12 +900,27 @@ fontSize2   = handles.FontSize(2);
 f_sample    = 0:1000;                                       % sampling frequency
 s           = 2*pi*f_sample*1i;
 
-R1 = polyval(CI.BC.num1,s)./polyval(CI.BC.den1,s).*exp(-s*CI.BC.tau_d1);
-R2 = polyval(CI.BC.num2,s)./polyval(CI.BC.den2,s).*exp(-s*CI.BC.tau_d2);
-
 pop_type_Inlet      = get(handles.pop_type_Inlet,'Value');
 pop_type_Outlet     = get(handles.pop_type_Outlet,'Value');
 pop_PLot            = get(handles.pop_Plot,'Value');
+
+R1 = polyval(CI.BC.num1,s)./polyval(CI.BC.den1,s).*exp(-s*CI.BC.tau_d1);
+if CI.BC.StyleOutlet == 8 && pop_PLot == 2 % B.B. 04/07/2019 START for HX
+    R2 = zeros(1,numel(s));
+    for k = 1:numel(s)
+        [R2(k),~,CI.BC.hx.hxTemp] = HX_End_Condition(s(k),CI);
+        CI.BC.hx.meanFlowCalc = true;
+    end
+    %Check for any errors in the heat exchanger calculations
+    if CI.BC.hx.hxTemp.err == true
+    warndlg(['An error occured in calculating the heat exchanger behavior. ',...
+            'This may be because the iterative mean flow solver failed. Is the Mach number',...
+            ' sensible? Is the heat transfer sensible?'],'PANIC!','replace');
+    end
+else % B.B. 04/07/2019 STOP
+    R2 = polyval(CI.BC.num2,s)./polyval(CI.BC.den2,s).*exp(-s*CI.BC.tau_d2);
+end
+
 %
 guidata(hObject, handles)
 %
@@ -794,13 +971,29 @@ assignin('base','CI',CI);                   % save the current information to th
 function Fcn_GUI_INI_BC_Update_Data(hObject, eventdata, handles)
 global CI
 Fcn_GUI_INI_BC_PLOT_BC_TF(hObject, eventdata, handles) 
-try
+% try
 main = handles.MainGUI;
 % Obtain handles using GUIDATA with the caller's handle 
 if(ishandle(main))
     mainHandles = guidata(main);
-    changeMain = mainHandles.FREQ;
-    set(changeMain, 'Enable', 'on');
+    % -------------------------------------
+    changeMain1 = mainHandles.FREQ;      % set the Frequency pop-up menu enable
+    changeMain2 = mainHandles.TD; % set the TD pop-up menu enable
+    % default 
+    set(changeMain1, 'Enable', 'on');
+    set(changeMain2, 'Enable', 'on');
+    % ------------
+    if ~isempty(CI.CD.indexHP)            % with heat perturbations
+        if ~isempty(find(CI.FM.indexFM == 4))   % Frequency calculation can only be run if the G-EQuation is not being used
+            set(changeMain1, 'Enable', 'off');
+            set(changeMain2, 'Enable', 'on');
+        end
+        if ~isempty(find(CI.FM.indexFM == 3))   % with loaded experimental/CFD FDF, time domain code is not avaliable
+            set(changeMain1, 'Enable', 'on');
+            set(changeMain2, 'Enable', 'off');
+        end
+    end
+    % ---------------
     String_Listbox=get(mainHandles.listbox_Info,'string');
     ind=find(ismember(String_Listbox,'<HTML><FONT color="blue">Information 4:'));
     nLength=size(String_Listbox);
@@ -818,7 +1011,7 @@ if(ishandle(main))
     String_Listbox{indStart+4}=['Outlet boundary condition type:' num2str(CI.BC.StyleOutlet) ];
     set(mainHandles.listbox_Info,'string',String_Listbox);
 end
-end
+% end
 guidata(hObject, handles);
 % guidata(hObject, handles);
 assignin('base','CI',CI);                   % save the current information to the workspace
@@ -831,8 +1024,8 @@ function pb_OK_Callback(hObject, eventdata, handles)
 Fcn_GUI_INI_BC_Update_Data(hObject, eventdata, handles)
 global CI
 CI.IsRun.GUI_INI_BC = 1;
-assignin('base','CI',CI); 
-uiresume(handles.figure);
+assignin('base','CI',CI);
+delete(handles.figure);
 
 % --- Executes on button press in pb_Apply.
 function pb_Apply_Callback(hObject, eventdata, handles)
@@ -847,7 +1040,7 @@ function pb_Cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_Cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(handles.figure);
+delete(handles.figure);
 
 
 % --- Executes on button press in pb_SaveFig.
@@ -1054,7 +1247,7 @@ function figure_CloseRequestFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: delete(hObject) closes the figure
-uiresume(hObject);
+delete(hObject);
 %--------------------------------------------------------------------------
 %-- Color set
 function color_type=Fcn_color_set(color_number)
@@ -1064,3 +1257,79 @@ for ss=1:length(n_sample)
     color_type(ss,1:3)=cmap(n_sample(ss),1:3);
 end
 
+
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% hObject    handle to pb_SaveFig (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
+% pop_PLot = get(handles.pop_Plot,'Value');
+% pop_type_Inlet=get(handles.pop_type_Inlet,'Value');
+% pop_type_Outlet=get(handles.pop_type_Outlet,'Value');
+Fig = figure;
+copyobj(handles.axes_Gain, Fig);
+copyobj(handles.axes_Phase, Fig);
+set(Fig,        'units','points')
+posFig = get(handles.figure,'position');
+hAxes = get(Fig,'children');
+set(hAxes(1),       'units','points',...
+                    'position',[60 60 200 150],...
+                    'ActivePositionProperty','position')
+set(hAxes(2),       'units','points',...
+                    'position',[60 210 200 150],...
+                    'ActivePositionProperty','position')
+posAxesOuter = [0 0 300 400];
+set(Fig,        'units','points',...
+                'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
+                            posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
+                            posAxesOuter(3:4)]) 
+
+
+% --- Executes on button press in pb_outlet.
+function pb_outlet_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_outlet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles       = guidata(hObject);
+currentFolder = pwd;
+[filename, pathname] = uigetfile({  '*.mat'}, ...
+                                    'Pick a file',...
+                                     currentFolder);
+if filename~=0
+    addpath(pathname)               % add directory to search path
+    load(filename);
+    handles.sysFit2 = sys;
+    set(handles.edit_td_Outlet, 'string', num2str(td.*1e3));
+    guidata(hObject, handles);
+end
+
+% --- Executes on button press in pb_inlet.
+function pb_inlet_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_inlet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles       = guidata(hObject);
+currentFolder = pwd;
+[filename, pathname] = uigetfile({  '*.mat'}, ...
+                                    'Pick a file',...
+                                     currentFolder);
+if filename~=0
+    addpath(pathname)               % add directory to search path
+    load(filename);
+    handles.sysFit1 = sys;
+    set(handles.edit_td_Inlet, 'string', num2str(td.*1e3));
+    guidata(hObject, handles);
+end
+
+% B.B. 04/07/2019 START
+% --- Executes on button press in heatExchangerButton.
+function heat_Exchanger_Setup_Button_Callback(hObject, eventdata, handles)
+% hObject    handle to heatExchangerButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+GUI_INI_BC_HX(handles.figure);
+% B.B. 04/07/2019 STOP

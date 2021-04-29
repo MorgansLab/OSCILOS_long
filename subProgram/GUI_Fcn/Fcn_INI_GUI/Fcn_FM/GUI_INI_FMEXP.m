@@ -22,7 +22,7 @@ function varargout = GUI_INI_FMEXP(varargin)
 
 % Edit the above text to modify the response to help GUI_INI_FMEXP
 
-% Last Modified by GUIDE v2.5 08-Oct-2014 17:36:53
+% Last Modified by GUIDE v2.5 09-Feb-2015 10:18:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -51,97 +51,41 @@ function GUI_INI_FMEXP_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to GUI_INI_FMEXP (see VARARGIN)
-indexEdit = 0;
-switch indexEdit 
-    case 0
-        %--------------------------------------------------------------------------
-        dontOpen = false;
-        mainGuiInput = find(strcmp(varargin, 'OSCILOS_long'));
-        if (isempty(mainGuiInput)) ...
-            || (length(varargin) <= mainGuiInput) ...
-            || (~ishandle(varargin{mainGuiInput+1}))
-            dontOpen = true;
-        else % load from the main GUI
-            % handles of main GUI
-            handles.MainGUI = varargin{mainGuiInput+1};
-            try
-                handles.ExampleGUI = varargin{mainGuiInput+2};
-            catch
-            end
-            % Obtain handles using GUIDATA with the caller's handle 
-            mainHandles = guidata(handles.MainGUI);
-            % background colors
-            handles.bgcolor=mainHandles.bgcolor;
-            % fontsize
-            handles.FontSize=mainHandles.FontSize;
-            %
-            handles.sW = mainHandles.sW;
-            handles.sH = mainHandles.sH;
-            handles.indexApp = 0;
-            GUI_INI_FMEXP_global_value_Initialization
-            % Update handles structure
-            guidata(hObject, handles);
-            % Initialization
-            GUI_INI_FMEXP_Initialization(hObject, eventdata, handles)
-        end
-        % Update handles structure
-        guidata(hObject, handles);
-        if dontOpen
-           disp('-----------------------------------------------------');
-           disp('This is a subprogram. It cannot be run independently.') 
-           disp('Please load the program "OSCILOS_long'' from the ')
-           disp('parent directory!')
-           disp('-----------------------------------------------------');
-        else
-           uiwait(hObject);
-        end
-    case 1
-        global CI
-        handles.bgcolor{1} = [0.95, 0.95, 0.95];
-        handles.bgcolor{2} = [0, 0, 0];
-        handles.bgcolor{3} = [.75, .75, .75];
-        handles.bgcolor{4} = [0.90,0.90,1];
-        %
-        handles.sW  = 800;
-        handles.sH  = 600;
-        %
-        if ispc
-            handles.FontSize(1)=11;                 % set the default fontsize
-            handles.FontSize(2)=9;
-        else
-            handles.FontSize(1)=12;                 % set the default fontsize
-            handles.FontSize(2)=10;   
-        end
-        handles.indexApp = 0;
-        CI.FMEXP.indexIMPORT    = 1;
-        CI.FMEXP.nFTF           = 0;
-        CI.FMEXP.indexModify    = 0;
-        assignin('base','CI',CI);                     % save the current information to the works
-        GUI_INI_FMEXP_global_value_Initialization
-        handles.indexApp = 0;
-        guidata(hObject, handles);  
-        GUI_INI_FMEXP_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
-end
-
-
-function GUI_INI_FMEXP_global_value_Initialization
 global CI
-try
-    indexExist_CI_FMEXP = any(strcmp('FMEXP',fieldnames(CI)));
-    if indexExist_CI_FMEXP == 0;
-        CI.FMEXP.indexIMPORT    = 1;
-        CI.FMEXP.nFTF           = 0;
-        CI.FMEXP.indexModify    = 0;
-    end
-catch
-end
-assignin('base','CI',CI);                   % save the current information to the workspace
-
+global HP   % use HP as an intermediate para
+mainGuiInput = 0;
+% handles of main GUI
+handles.MainGUI = varargin{mainGuiInput+1};
+% Obtain handles using GUIDATA with the caller's handle 
+mainHandles = guidata(handles.MainGUI);
+% background colors
+handles.bgcolor=mainHandles.bgcolor;
+% fontsize
+handles.FontSize=mainHandles.FontSize;
+%
+handles.sW = mainHandles.sW;
+handles.sH = mainHandles.sH;
+handles.indexApp = 0;
+% --------------------------
+%
+handles.HP_num  = varargin{2};              % the index of unsteady heat source
+handles.indexFM = varargin{3};              % the index of flame model
+HP = CI.FM.HP{handles.HP_num};  
+assignin('base','HP',HP);  
+guidata(hObject, handles);
+%
+% --------------------------
+% Initialization
+GUI_INI_FMEXP_Initialization(hObject, eventdata, handles)
+guidata(hObject, handles);
+handles.output = hObject;
+guidata(hObject, handles);
+%
+%
 %-------------------------------------------------
 %
 function GUI_INI_FMEXP_Initialization(varargin)
-global CI
+global HP
 hObject = varargin{1};
 handles = guidata(hObject);    
 set(0, 'units', 'points');
@@ -172,7 +116,7 @@ pH=pannelsize(4);
 set(handles.axes1,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2/10 pH*5.0/10 pW*6/10 pH*3.5/10],...
+                        'position',[pW*2/10 pH*5/10 pW*6/10 pH*3.5/10],...
                         'fontsize',handles.FontSize(1),...
                         'color',handles.bgcolor{1},...
                         'box','on');  
@@ -191,7 +135,24 @@ set(handles.pop_Plot,...
                         'string',{  'Flame describing function'},...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','left',...
-                        'enable','on');                    
+                        'enable','on');   
+% set(handles.text_fRange,...
+%                         'units', 'points',...
+%                         'Fontunits','points',...
+%                         'position',[pW*0.5/10 pH*7.75/10 pW*5/10 pH*0.6/10],...
+%                         'fontsize',handles.FontSize(2),...
+%                         'string','Plot frequency range: [Hz]',...
+%                         'backgroundcolor',handles.bgcolor{3},...
+%                         'horizontalalignment','left');                         
+% set(handles.edit_fRange,...
+%                         'units', 'points',...
+%                         'Fontunits','points',...
+%                         'position',[pW*6/10 pH*7.875/10 pW*3/10 pH*0.6/10],...
+%                         'fontsize',handles.FontSize(2),...
+%                         'string','[1 400]',...
+%                         'backgroundcolor',handles.bgcolor{1},...
+%                         'horizontalalignment','right',...
+%                         'Enable','on');
 guidata(hObject, handles);
 %----------------------------------------
 % pannels FDFExp
@@ -270,29 +231,30 @@ pH=pannelsize(4);
 set(handles.pb_Apply,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.4/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*1/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Plot figure',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_SaveFig,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2.8/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save figure',...
                         'backgroundcolor',handles.bgcolor{3},...
-                        'enable','off');
+                        'enable','off',...
+                        'visible','off');
 set(handles.pb_OK,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.2/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','OK',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_Cancel,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*7.6/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*7/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Cancel',...
                         'backgroundcolor',handles.bgcolor{3});
@@ -300,11 +262,14 @@ set(handles.pb_Cancel,...
 handles.ObjVisible_EXP      = findobj('-regexp','Tag','EXP');
 set(handles.ObjVisible_EXP,    'visible','on')
 guidata(hObject, handles);
-Fcn_GUI_INI_FMEXP_Listbox_update(hObject)
+Fcn_GUI_INI_FMEXP_Listbox_update(hObject);
+handles = guidata(hObject);
 guidata(hObject, handles);
-Fcn_GUI_INI_FMEXP_Enable(hObject,CI.FMEXP.nFTF)
+Fcn_GUI_INI_FMEXP_Enable(hObject,HP.FMEXP.nFTF)
+
+handles = guidata(hObject);
 guidata(hObject, handles);
-assignin('base','CI',CI);                   % save the current information to the workspace   
+assignin('base','HP',HP);                   % save the current information to the workspace   
 % ------------------------------------------------------------------------
 
 function Fcn_GUI_INI_FMEXP_Enable(hObject,index)
@@ -324,16 +289,15 @@ guidata(hObject, handles);
 function Fcn_GUI_INI_FMEXP_Listbox_update(varargin)
 hObject = varargin{1};
 handles = guidata(hObject);
-global CI
-try
-    for ss = 1:CI.FMEXP.nCount
-        uRatio = CI.FMEXP.uRatio(ss);
+global HP
+if HP.FMEXP.nFTF > 0
+    for ss = 1:HP.FMEXP.nFTF
+        uRatio = HP.FMEXP.uRatio(ss);
         String_Listbox{ss} = ['Velocity ratio u''/u_mean = ' num2str(uRatio)];
     end
     set(handles.listbox_EXP,'string',String_Listbox,'value',1);
-catch
 end
-assignin('base','CI',CI);                   % save the current information to the workspace
+assignin('base','HP',HP);                   % save the current information to the workspace
 guidata(hObject, handles);
 % ------------------------------------------------------------------------
 %
@@ -343,20 +307,26 @@ function pb_OK_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Fcn_GUI_INI_FM_Update_Data(hObject, eventdata, handles)
+global HP
 global CI
-if CI.FMEXP.nFTF>0
+if HP.FMEXP.nFTF>0
     Fcn_GUI_INI_FMEXP_plot(hObject, eventdata, handles)
-    Fcn_GUI_INI_FMEXP_Update_Data(hObject, eventdata, handles)
+    handles = guidata(hObject);
+    guidata(hObject, handles);
+    Fcn_GUI_INI_FMEXP_Update_Data(hObject, eventdata, handles);
     handles = guidata(hObject);
     set(handles.pb_SaveFig,'enable','on');
     guidata(hObject, handles);
-    assignin('base','CI',CI);                   % save the current information to the workspace
-    uiresume(handles.figure);
+    assignin('base','HP',HP);                   % save the current information to the workspace
+    delete(handles.figure);
 else
     errordlg('No FTF created!','Error');
 end
-CI.IsRun.GUI_INI_FMEXP = 1;
+HP.IsRun = 1;           % index == 1 to show that this program has ever been run
+CI.FM.HP{handles.HP_num}        = HP;
+CI.FM.indexFM(handles.HP_num)   = handles.indexFM;
 assignin('base','CI',CI); 
+assignin('base','HP',HP); 
 
 % --- Executes on button press in pb_Apply.
 function pb_Apply_Callback(hObject, eventdata, handles)
@@ -374,19 +344,20 @@ function varargout = GUI_INI_FMEXP_OutputFcn(hObject, eventdata, handles)
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-varargout{1} = [];
-delete(hObject);
-%
+try
+varargout{1} = handles.output;
+end
+%UI
 
 function Fcn_GUI_INI_FMEXP_plot(varargin)
 hObject     = varargin{1};
 handles     = guidata(hObject);
-global CI
+global HP
 hAxes1      = handles.axes1;
 hAxes2      = handles.axes2;
 fontSize1   = handles.FontSize(1);
 fontSize2   = handles.FontSize(2);
-color_type  = Fcn_color_set(CI.FMEXP.nFTF+2);    % color set
+color_type  = Fcn_color_set(HP.FMEXP.nFTF+2);    % color set
 % --------------
 try
     cbh = findobj( 0, 'tag', 'Colorbar' );
@@ -396,8 +367,8 @@ end
 cla(hAxes1,'reset')
 axes(hAxes1)
 hold on
-for ss = 1:CI.FMEXP.nFTF
-    Y   = CI.FMEXP.FTF{ss}; 
+for ss = 1:HP.FMEXP.nFTF
+    Y   = HP.FMEXP.FTF{ss}; 
     hLine = plot(hAxes1,Y.xfit,abs(Y.yfit),'-','color',color_type(ss,1:3),'Linewidth',2);
     xminUD(ss) = 0;
     xmaxUD(ss) = Y.xfit(end);
@@ -412,17 +383,25 @@ xlabel(hAxes1,'','Color','k','Interpreter','LaTex','FontSize',fontSize1);
 ylabel(hAxes1,'Gain [-]','Color','k','Interpreter','LaTex','FontSize',fontSize1)
 set(hAxes1,'xlim',[xmin xmax],'xTick',0:100:xmax,'xticklabel',{},...
 'YAxisLocation','left','Color','w');
-hold off
+
 hl=legend('show');
 set(hl,'interpreter','latex','Fontsize',handles.FontSize(2),'box','off','Unit','points')
+% --------------------------
+for ss = 1:HP.FMEXP.nFTF
+    Y   = HP.FMEXP.FTF{ss}; 
+    hLine = plot(hAxes1,Y.Gain_exp(:,1),Y.Gain_exp(:,2),'s','color',color_type(ss,1:3),'Linewidth',2);
+    clear Y
+end
+hold off
 %--------------------------------
 cla(hAxes2,'reset')
 axes(hAxes2)
 hold on
-for ss = 1:CI.FMEXP.nFTF
-    Y   = CI.FMEXP.FTF{ss}; 
+for ss = 1:HP.FMEXP.nFTF
+    Y   = HP.FMEXP.FTF{ss}; 
     hLine = plot(hAxes2,Y.xfit,unwrap(angle(Y.yfit),1.9*pi)./pi,...
         '-','color',color_type(ss,1:3),'Linewidth',2);
+    plot(hAxes2,Y.Phase_exp(:,1),unwrap(Y.Phase_exp(:,2),1.9*pi)./pi,'s','color',color_type(ss,1:3),'Linewidth',2);
 end
 set(hAxes2,'YColor','k','Box','on','ygrid','on','xgrid','on');
 set(hAxes2,'FontName','Helvetica','FontSize',fontSize1,'LineWidth',1)
@@ -430,46 +409,72 @@ xlabel(hAxes2,'$f$ [Hz]','Color','k','Interpreter','LaTex','FontSize',fontSize1)
 ylabel(hAxes2,'Phase/$\pi$ [-]','Color','k','Interpreter','LaTex','FontSize',fontSize1)
 set(hAxes2,'xlim',get(hAxes1,'xlim'),'xTick',get(hAxes1,'xTick'),...
 'YAxisLocation','left','Color','w');
+
 hold off
 guidata(hObject, handles)
 %
-%
+% %
+% % --- Update the data when clicking 'OK' or 'Apply'
+% function Fcn_GUI_INI_FMEXP_Update_Data(hObject, eventdata, handles)
+% handles = guidata(hObject);
+% global HP
+% try
+% main = handles.MainGUI;
+% % Obtain handles using GUIDATA with the caller's handle 
+% if(ishandle(main))
+%     mainHandles = guidata(main);
+%     changeMain = mainHandles.INI_BC;
+%     set(changeMain, 'Enable', 'on');
+%     String_Listbox=get(mainHandles.listbox_Info,'string');
+%     ind=find(ismember(String_Listbox,'<HTML><FONT color="blue">Information 3:'));
+%     nLength=size(String_Listbox);
+%     if isempty(ind)
+%         indStart=nLength(1);
+%     else
+%         indStart=ind-1;
+%         for i=nLength(1):-1:indStart+1 
+%             String_Listbox(i)=[];
+%         end
+%     end
+%     String_Listbox{indStart+1}=['<HTML><FONT color="blue">Information 3:'];
+%     String_Listbox{indStart+2}=['<HTML><FONT color="blue">Flame describing functions are from experimental results:'];
+%     set(mainHandles.listbox_Info,'string',String_Listbox);
+% end
+% catch
+% end
+% guidata(hObject, handles);
+% % guidata(hObject, handles);
+% assignin('base','HP',HP);                   % save the current information to the workspace
+
 % --- Update the data when clicking 'OK' or 'Apply'
 function Fcn_GUI_INI_FMEXP_Update_Data(hObject, eventdata, handles)
 handles = guidata(hObject);
 global CI
-try
 main = handles.MainGUI;
-% Obtain handles using GUIDATA with the caller's handle 
 if(ishandle(main))
     mainHandles = guidata(main);
-    changeMain = mainHandles.INI_BC;
-    set(changeMain, 'Enable', 'on');
-    String_Listbox=get(mainHandles.listbox_Info,'string');
-    ind=find(ismember(String_Listbox,'<HTML><FONT color="blue">Information 3:'));
-    nLength=size(String_Listbox);
-    if isempty(ind)
-        indStart=nLength(1);
-    else
-        indStart=ind-1;
-        for i=nLength(1):-1:indStart+1 
-            String_Listbox(i)=[];
-        end
+    changeMain = mainHandles.uitable1;
+    table_cell = get(changeMain, 'data');
+    table_cell{handles.HP_num,1}= CI.FM.ModelType{handles.indexFM};
+    table_cell{handles.HP_num,2}= 'Y';
+    set(changeMain,'data',table_cell);  % change the table  
+    % -----------
+    N = length(CI.FM.indexFM);
+    for ss = 1:N
+        HP = CI.FM.HP{ss};
+        isRunSp(ss) = HP.IsRun;
     end
-    String_Listbox{indStart+1}=['<HTML><FONT color="blue">Information 3:'];
-    String_Listbox{indStart+2}=['<HTML><FONT color="blue">Flame describing functions are from experimental results:'];
-    set(mainHandles.listbox_Info,'string',String_Listbox);
-end
-catch
+    if isRunSp == 1
+        changeMain2 = mainHandles.pb_OK;
+        set(changeMain2, 'enable','on');
+    end   
 end
 guidata(hObject, handles);
-% guidata(hObject, handles);
-assignin('base','CI',CI);                   % save the current information to the workspace
 
 
 % --- Executes on button press in pb_SaveFig.
 function pb_SaveFig_Callback(varargin)
-global CI
+global HP
 hObject = varargin{1};
 handles = guidata(hObject);
 Fig                 = figure;
@@ -479,22 +484,24 @@ copyobj(handles.axes1, Fig);
 copyobj(handles.axes2, Fig);
 hAxes               = get(Fig,'children');
 set(hAxes(1),       'units','points',...
-                    'position',[60 60 200 150],...
-                    'ActivePositionProperty','position')
+                    'position',[60 60 300 200],...
+                    'ActivePositionProperty','position',...
+                    'Fontsize',handles.FontSize(1))
 set(hAxes(2),       'units','points',...
-                    'position',[60 210 200 150],...
-                    'ActivePositionProperty','position')
+                    'position',[60 260 300 200],...
+                    'ActivePositionProperty','position',...
+                    'Fontsize',handles.FontSize(1))
 pos1                = get(hAxes(1),'position');
 pos2                = get(hAxes(2),'position');
-posAxesOuter = [0 0 300 400];
+posAxesOuter = [0 0 600 600];
 hChildren = get(hAxes(2), 'children');
-for ss = 1:length(hChildren)
+for ss = 1:round((length(hChildren))/2)
 set(get(get(hChildren(ss),'Annotation'),'LegendInformation'),'IconDisplayStyle','on'); 
-set(hChildren(ss),'DisplayName',['$\hat{u}_1/\bar{u}_1=$' num2str(CI.FMEXP.uRatio(end+1-ss))]);
+set(hChildren(ss),'DisplayName',['$\hat{u}_1/\bar{u}_1=$' num2str(HP.FMEXP.uRatio(end+1-ss))]);
 end
 axes(hAxes(2))
 hl=legend('show');
-set(hl,'interpreter','latex','Fontsize',handles.FontSize(2),'box','off','Unit','points')
+set(hl,'interpreter','latex','Fontsize',handles.FontSize(1)+2,'box','off','Unit','points')
 set(hAxes(1),       'position',pos1)
 set(Fig,        'units','points',...
                 'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
@@ -507,7 +514,7 @@ function pb_Cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_Cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(handles.figure);
+delete(handles.figure);
 
 % --- Executes when user attempts to close figure.
 function figure_CloseRequestFcn(hObject, eventdata, handles)
@@ -516,7 +523,7 @@ function figure_CloseRequestFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: delete(hObject) closes the figure
-uiresume(hObject);
+delete(hObject);
 %--------------------------------------------------------------------------
 
 % --- Executes on selection change in pop_Plot.
@@ -571,11 +578,11 @@ function pb_EXP_add_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_EXP_add (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global CI
-CI.FMEXP.indexIMPORT = 1;
-assignin('base','CI',CI);                   % save the current information to the workspace   
+global HP
+HP.FMEXP.indexIMPORT = 1;
+assignin('base','HP',HP);                   % save the current information to the workspace   
 GUI_INI_FM_IMPORT('GUI_INI_FMEXP', handles.figure);
-Fcn_GUI_INI_FMEXP_Enable(hObject,CI.FMEXP.nFTF)
+Fcn_GUI_INI_FMEXP_Enable(hObject,HP.FMEXP.nFTF)
 
 
 % --- Executes on button press in pb_EXP_modify.
@@ -583,11 +590,11 @@ function pb_EXP_modify_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_EXP_modify (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global CI
-CI.FMEXP.indexIMPORT = 2;
-CI.FMEXP.indexModify = get(handles.listbox_EXP, 'value');
-assignin('base','CI',CI);                   % save the current information to the workspace   
-if isempty(CI.FMEXP.indexModify)
+global HP
+HP.FMEXP.indexIMPORT = 2;
+HP.FMEXP.indexModify = get(handles.listbox_EXP, 'value');
+assignin('base','HP',HP);                   % save the current information to the workspace   
+if isempty(HP.FMEXP.indexModify)
     errordlg('No FTF has been selected!','Error');
 else
     GUI_INI_FM_IMPORT('GUI_INI_FMEXP', handles.figure);
@@ -598,18 +605,81 @@ function pb_EXP_delete_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_EXP_delete (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global CI
+global HP
 indexDelete     = get(handles.listbox_EXP, 'value');
 String_Listbox  = get(handles.listbox_EXP,'string');
 if  isempty(indexDelete)
     errordlg('There is no FTF!','Error');
-    Fcn_GUI_INI_FMEXP_Enable(hObject,CI.FMEXP.nFTF)
+    Fcn_GUI_INI_FMEXP_Enable(hObject,HP.FMEXP.nFTF)
 else
     String_Listbox(indexDelete)     = [];
     set(handles.listbox_EXP,'string',String_Listbox,'value',1);
-    CI.FMEXP.FTF{indexDelete}       = [];
-    CI.FMEXP.uRatio(indexDelete)    = []; 
-    CI.FMEXP.nFTF                   = CI.FMEXP.nFTF - 1; 
-    Fcn_GUI_INI_FMEXP_Enable(hObject,CI.FMEXP.nFTF)
+    HP.FMEXP.FTF{indexDelete}       = [];
+    HP.FMEXP.uRatio(indexDelete)    = []; 
+    HP.FMEXP.nFTF                   = HP.FMEXP.nFTF - 1; 
+    Fcn_GUI_INI_FMEXP_Enable(hObject,HP.FMEXP.nFTF)
 end
-assignin('base','CI',CI);                   % save the current information to the workspace 
+assignin('base','HP',HP);                   % save the current information to the workspace 
+
+
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global HP
+% hObject = varargin{1};
+% handles = guidata(hObject);
+Fig                 = figure;
+set(Fig,'units','points')
+posFig              = get(handles.figure,'position');
+copyobj(handles.axes1, Fig);
+copyobj(handles.axes2, Fig);
+hAxes               = get(Fig,'children');
+set(hAxes(1),       'units','points',...
+                    'position',[60 60 300 200],...
+                    'ActivePositionProperty','position',...
+                    'Fontsize',handles.FontSize(1))
+set(hAxes(2),       'units','points',...
+                    'position',[60 260 300 200],...
+                    'ActivePositionProperty','position',...
+                    'Fontsize',handles.FontSize(1))
+pos1                = get(hAxes(1),'position');
+pos2                = get(hAxes(2),'position');
+posAxesOuter = [0 0 600 600];
+hChildren = get(hAxes(2), 'children');
+for ss = 1:round((length(hChildren))/2)
+set(get(get(hChildren(ss),'Annotation'),'LegendInformation'),'IconDisplayStyle','off'); 
+set(hChildren(ss),'DisplayName',['$\hat{u}_1/\bar{u}_1=$' num2str(HP.FMEXP.uRatio(end+1-ss))]);
+end
+axes(hAxes(2))
+hl=legend('show');
+set(hl,'interpreter','latex','Fontsize',handles.FontSize(1)+2,'box','off','Unit','points')
+set(hAxes(1),       'position',pos1)
+set(Fig,        'units','points',...
+                'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
+                            posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
+                            posAxesOuter(3:4)])  
+
+
+
+function edit_fRange_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_fRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_fRange as text
+%        str2double(get(hObject,'String')) returns contents of edit_fRange as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_fRange_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_fRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

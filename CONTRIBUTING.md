@@ -19,7 +19,7 @@ OSCILOS is being developed for research. Please [join us](http://www.oscilos.com
 * The documentation can be found in the [docs](docs) folder. 
 
 ## Logging issues and fixing issues
-* Please log any issues you find [here](https://github.com/MorgansLab/OSCILOS-Long-1-3/issues), and don't forget to say what version of Matlab you are using, and what OS. 
+* Please log any issues you find [here](https://github.com/MorgansLab/OSCILOS-long-1.5.0/issues), and don't forget to say what version of Matlab you are using, and what OS. 
 * Label your issue as a `bug`, `enhancement` etc.
 * Developers working on an issue should assign themselves the issue before starting any work. 
 * Corrections for `bug` issues should be done using GitFlow Hotfix or Bugfix, or in a release branch. 

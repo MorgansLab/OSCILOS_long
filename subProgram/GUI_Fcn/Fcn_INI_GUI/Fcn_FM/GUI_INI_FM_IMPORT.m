@@ -22,7 +22,7 @@ function varargout = GUI_INI_FM_IMPORT(varargin)
 
 % Edit the above text to modify the response to help GUI_INI_FM_IMPORT
 
-% Last Modified by GUIDE v2.5 09-Oct-2014 09:42:08
+% Last Modified by GUIDE v2.5 09-Feb-2015 10:35:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -84,7 +84,9 @@ switch indexEdit
             % Initialization
             GUI_INI_FM_IMPORT_Initialization(hObject, eventdata, handles)
         end
-        % Update handles structure
+        handles = guidata(hObject);  
+        guidata(hObject, handles);
+        handles.output = hObject;
         guidata(hObject, handles);
         if dontOpen
            disp('-----------------------------------------------------');
@@ -93,10 +95,10 @@ switch indexEdit
            disp('parent directory!')
            disp('-----------------------------------------------------');
         else
-           uiwait(hObject);
+%            uiwait(hObject);
         end
     case 1
-        global CI
+        global HP
         handles.bgcolor{1} = [0.95, 0.95, 0.95];
         handles.bgcolor{2} = [0, 0, 0];
         handles.bgcolor{3} = [.75, .75, .75];
@@ -113,12 +115,14 @@ switch indexEdit
             handles.FontSize(2)=10;   
         end
         handles.indexApp = 0;
-        CI.Ru = 8.3145;
-        CI.FMEXP.indexIMPORT = 1;
-        assignin('base','CI',CI);                   % save the current information to the works
+        HP.FMEXP.indexIMPORT = 1;
+        assignin('base','HP',HP);                   % save the current information to the works
         guidata(hObject, handles);  
         GUI_INI_FM_IMPORT_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
+        handles = guidata(hObject);  
+        guidata(hObject, handles);
+        handles.output = hObject;
+        guidata(hObject, handles);
 end
 %
 %-------------------------------------------------------------------------
@@ -132,7 +136,7 @@ screenSize  = get(0, 'ScreenSize');                     % get the screen size
 sW          = handles.sW;                               % screen width
 sH          = handles.sH ;                              % screen height
 FigW=sW.*4/5;                                           % window width
-FigH=sH./2;                                             % window height
+FigH=sH*2/3;                                             % window height
 set(handles.figure,     'units', 'points',...
                         'position',[(screenSize(3)-FigW)./2 (screenSize(4)-FigH)./2 FigW FigH],...
                         'name','Import flame transfer function for a velocity ratio (u''/u_mean) and corresponding fitting',...
@@ -142,7 +146,7 @@ set(handles.figure,     'units', 'points',...
 set(handles.uipanel_Axes,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*10.5/20 FigH*2.5/20 FigW*9/20 FigH*17.25/20],...
+                        'position',[FigW*10.5/20 FigH*2.0/20 FigW*9/20 FigH*17.75/20],...
                         'Title','Plots',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -155,17 +159,45 @@ pH=pannelsize(4);
 set(handles.axes1,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2/10 pH*5.0/10 pW*6/10 pH*3.5/10],...
+                        'position',[pW*2/10 pH*4.5/10 pW*6/10 pH*3.0/10],...
                         'fontsize',handles.FontSize(1),...
                         'color',handles.bgcolor{1},...
                         'box','on');  
 set(handles.axes2,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2/10 pH*1.5/10 pW*6/10 pH*3.5/10],...
+                        'position',[pW*2/10 pH*1.5/10 pW*6/10 pH*3.0/10],...
                         'fontsize',handles.FontSize(1),...
                         'color',handles.bgcolor{1},...
-                        'box','on');                      
+                        'box','on');       
+set(handles.pop_plot,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*8.5/10 pW*5.0/10 pH*1/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string',{  'Transfer function';...
+                                    'Poles and zeros'},...
+                        'backgroundcolor',handles.bgcolor{1},...
+                        'horizontalalignment','left',...
+                        'enable','on',...
+                        'value',1);  
+set(handles.text_fRange,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*7.75/10 pW*5/10 pH*0.6/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','Plot frequency range: [Hz]',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','left');                         
+set(handles.edit_fRange,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*6/10 pH*7.875/10 pW*3/10 pH*0.6/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','[1 400]',...
+                        'backgroundcolor',handles.bgcolor{1},...
+                        'horizontalalignment','right',...
+                        'Enable','on');
 guidata(hObject, handles);
 
 %-----------------------------------------
@@ -173,7 +205,7 @@ guidata(hObject, handles);
 set(handles.uipanel_Import,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*14.25/20 FigW*9.5/20 FigH*5.5/20],...
+                        'position',[FigW*0.5/20 FigH*14.75/20 FigW*9.5/20 FigH*5/20],...
                         'Title','Load gain and phase data from a mat file',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -219,11 +251,45 @@ set(handles.pb_Import,...
                         'horizontalalignment','right',...
                         'Enable','on'); 
 %-----------------------------------------
+% pannel sys source pannel
+set(handles.uipanel_source,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[FigW*0.5/20 FigH*11.5/20 FigW*9.5/20 FigH*3.0/20],...
+                        'Title','Fitted transfer function source',...
+                        'visible','on',...
+                        'highlightcolor',handles.bgcolor{3},...
+                        'borderwidth',1,...
+                        'fontsize',handles.FontSize(2),...
+                        'backgroundcolor',handles.bgcolor{3}); 
+pannelsize=get(handles.uipanel_source,'position');
+pW=pannelsize(3);
+pH=pannelsize(4);                    
+set(handles.text_source,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*2/10 pW*5/10 pH*3/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','Source:',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','left');                         
+set(handles.pop_source,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*4.5/10 pH*2/10 pW*5.0/10 pH*4/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string',{  'fitfrd fitting';...
+                                    'Load from file'},...
+                        'backgroundcolor',handles.bgcolor{1},...
+                        'horizontalalignment','left',...
+                        'enable','on',...
+                        'value',1);  
+%-----------------------------------------
 % pannel fitting setting 
 set(handles.uipanel_FIT,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*2.5/20 FigW*9.5/20 FigH*11.5/20],...
+                        'position',[FigW*0.5/20 FigH*2.0/20 FigW*9.5/20 FigH*9.25/20],...
                         'Title','Command fitfrd configuration...',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -318,12 +384,19 @@ set(handles.edit_FIT_a5,...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','right',...
                         'Enable','on');
+set(handles.pb_sys_load,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*1/10 pW*9/10 pH*1.5/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','Load the transfer function models and time delay ',...
+                        'backgroundcolor',handles.bgcolor{3});
 %----------------------------------------
 % pannel AOC                   
 set(handles.uipanel_AOC,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*2/20],...
+                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*1.75/20],...
                         'Title','',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -336,14 +409,14 @@ pH=pannelsize(4);
 set(handles.pb_fitfrd,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.4/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*1/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Fit and plot',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_SaveFitting,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2.8/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save fitting',...
                         'backgroundcolor',handles.bgcolor{3},...
@@ -351,15 +424,16 @@ set(handles.pb_SaveFitting,...
 set(handles.pb_SaveFig,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.2/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save figure',...
                         'backgroundcolor',handles.bgcolor{3},...
-                        'enable','off');
+                        'enable','off',...
+                        'visible','off');
 set(handles.pb_Cancel,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*7.6/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*7/10 pH*1/10 pW*2.0/10 pH*7/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Cancel',...
                         'backgroundcolor',handles.bgcolor{3});
@@ -374,17 +448,18 @@ guidata(hObject, handles);
 function GUI_INI_FM_IMPORT_edit_update(varargin)
 hObject = varargin{1};
 handles = guidata(hObject); 
-handles.ObjVisible_FIT      = findobj('-regexp','Tag','FIT');
-handles.ObjEditEnable_FIT   = findobj('-regexp','Tag','edit_FIT');
+handles.ObjVisible_FIT          = findobj('-regexp','Tag','FIT');
+handles.ObjEditEnable_FIT       = findobj('-regexp','Tag','edit_FIT');
+handles.ObjVisible_source       = findobj('-regexp','Tag','_source');
 set(handles.ObjVisible_FIT,         'visible','on')
 set(handles.ObjEditEnable_FIT,      'enable', 'on')
-global CI
+global HP
 guidata(hObject, handles);
-switch CI.FMEXP.indexIMPORT 
+switch HP.FMEXP.indexIMPORT 
     case 1
         set(handles.pb_Import,              'enable','on'); 
     case 2  % edit selected FTF
-        handles.FMFit   = CI.FMEXP.FTF{CI.FMEXP.indexModify};        
+        handles.FMFit   = HP.FMEXP.FTF{HP.FMEXP.indexModify};        
         fmin            = handles.FMFit.freq_band(1);
         fmax            = handles.FMFit.freq_band(2);
         set(handles.edit_uRatio,    'string', num2str(handles.FMFit.uRatio));
@@ -393,23 +468,60 @@ switch CI.FMEXP.indexIMPORT
         set(handles.edit_FIT_a3,    'string', num2str(handles.FMFit.tau_correction.*1000));                         
         set(handles.edit_FIT_a4,    'string', num2str(handles.FMFit.fitting_level));
         set(handles.edit_FIT_a5,    'string', num2str(handles.FMFit.RD));
-        set(handles.pb_Import,      'Enable','off'); 
+        set(handles.pb_Import,      'Enable','off');
+        try
+            set(handles.pop_source,     'value',handles.FMFit.popSourceValue);
+        catch
+            set(handles.pop_source,     'value',1);
+        end
+        set(handles.pb_fitfrd,      'Enable','on');
+        set(handles.pb_SaveFitting, 'Enable','on');
         % -------------
         guidata(hObject, handles);
         Fcn_GUI_INI_FM_IMPORT_Plot(hObject)
         handles = guidata(hObject);  
-end       
+end   
+Fcn_sys_source_pop_update(hObject);
 %
 %-------------------------------------------------------------------------
 %
+function Fcn_sys_source_pop_update(varargin)
+hObject = varargin{1};
+handles = guidata(hObject);
+popValue = get(handles.pop_source,'value');
+switch popValue
+    case 1                
+        set(handles.edit_FIT_a3,        'enable','on');
+        set(handles.text_FIT_a4,        'visible','on'); 
+        set(handles.text_FIT_a5,        'visible','on'); 
+        set(handles.edit_FIT_a4,        'visible','on'); 
+        set(handles.edit_FIT_a5,        'visible','on');
+        set(handles.pb_sys_load,        'visible','off'); 
+        set(handles.pb_fitfrd,         'enable','on');
+    case 2
+        set(handles.edit_FIT_a3,        'enable','off');
+        set(handles.text_FIT_a4,        'visible','off'); 
+        set(handles.text_FIT_a5,        'visible','off'); 
+        set(handles.edit_FIT_a4,        'visible','off'); 
+        set(handles.edit_FIT_a5,        'visible','off');
+        set(handles.pb_sys_load,        'visible','on');
+        set(handles.pb_fitfrd,         'enable','off');
+end
+
+
+%
+%-------------------------------------------------------------------------
+%
+
 % --- Outputs from this function are returned to the command line.
 function varargout = GUI_INI_FM_IMPORT_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-varargout{1} = [];
-delete(hObject);
+try
+varargout{1} = handles.output;
+end
 %
 %-------------------------------------------------------------------------
 %
@@ -443,6 +555,27 @@ set(handles.pb_SaveFig,     'enable','off')
 end
 % Update handles structure
 guidata(hObject, handles);
+%
+%-------------------------------------------------------------------------
+%
+% --- Executes on button press in pb_sys_load.
+function pb_sys_load_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_sys_load (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles       = guidata(hObject);
+currentFolder = pwd;
+[filename, pathname] = uigetfile({  '*.mat'}, ...
+                                    'Pick a file',...
+                                     currentFolder);
+if filename~=0
+    addpath(pathname)               % add directory to search path
+    load(filename);
+    handles.sysFit = sys;
+    set(handles.edit_FIT_a3, 'string', num2str(td.*1e3));
+    set(handles.pb_fitfrd,         'enable','on');
+    guidata(hObject, handles);
+end
 %
 %-------------------------------------------------------------------------
 %
@@ -517,7 +650,7 @@ function pb_Cancel_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = guidata(hObject);
-uiresume(handles.figure);
+delete(handles.figure);
 %
 %--------------------------------------------------------------------------
 %
@@ -559,6 +692,9 @@ handles.FMFit.freq_band             = [fmin, fmax];
 handles.FMFit.tau_correction        = str2double(get(handles.edit_FIT_a3,'string'))./1000;
 handles.FMFit.fitting_level         = str2double(get(handles.edit_FIT_a4,'string'));
 handles.FMFit.RD                    = str2double(get(handles.edit_FIT_a5,'string'));
+handles.FMFit.popSourceValue        = get(handles.pop_source,'value');
+switch handles.FMFit.popSourceValue
+    case 1
 [   handles.FMFit.F,...
     handles.FMFit.den,...
     handles.FMFit.num ] = Fcn_fitfrd(   handles.FMFit.Gain_exp,...
@@ -566,12 +702,32 @@ handles.FMFit.RD                    = str2double(get(handles.edit_FIT_a5,'string
                                             handles.FMFit.freq_band,...
                                             handles.FMFit.tau_correction,...
                                             handles.FMFit.fitting_level,...
-                                            handles.FMFit.RD);
+                                            handles.FMFit.RD,...
+                                            [],...
+                                            handles.FMFit.popSourceValue);
+    case 2
+[   handles.FMFit.F,...
+    handles.FMFit.den,...
+    handles.FMFit.num ] = Fcn_fitfrd(   handles.FMFit.Gain_exp,...
+                                            handles.FMFit.Phase_exp,...
+                                            handles.FMFit.freq_band,...
+                                            handles.FMFit.tau_correction,...
+                                            handles.FMFit.fitting_level,...
+                                            handles.FMFit.RD,...
+                                            handles.sysFit,...
+                                            handles.FMFit.popSourceValue);
+end
+        
 % used for plots
 handles.FMFit.xfit      =   fmin:1:fmax;
+try
+    fRange = str2num(get(handles.edit_fRange,'String'));
+    handles.FMFit.xfit = fRange(1):1:fRange(2);
+end
+
 s                       =   2*pi*handles.FMFit.xfit*1i;
 handles.FMFit.yfit      =   polyval(handles.FMFit.num,s)./...
-                            polyval(handles.FMFit.den,s).*exp(handles.FMFit.tau_correction.*s);
+                            polyval(handles.FMFit.den,s).*exp(-handles.FMFit.tau_correction.*s);
 % Update handles structure
 guidata(hObject, handles);
 %
@@ -588,15 +744,15 @@ guidata(hObject,handles);
 function pb_SaveFitting_Callback(varargin)
 hObject = varargin{1};
 handles = guidata(hObject);
-global CI
+global HP
 set(handles.pb_SaveFig, 'enable','on')
-switch CI.FMEXP.indexIMPORT 
+switch HP.FMEXP.indexIMPORT 
     case 1  % add new FTF
-        nCount                      = CI.FMEXP.nFTF + 1;
-        CI.FMEXP.nFTF              = nCount;
-        CI.FMEXP.FTF{nCount}       = handles.FMFit;
-        CI.FMEXP.uRatio(nCount)    = handles.FMFit.uRatio; 
-        assignin('base','CI',CI);                  
+        nCount                      = HP.FMEXP.nFTF + 1;
+        HP.FMEXP.nFTF              = nCount;
+        HP.FMEXP.FTF{nCount}       = handles.FMFit;
+        HP.FMEXP.uRatio(nCount)    = handles.FMFit.uRatio; 
+        assignin('base','HP',HP);                  
         main = handles.MainGUI;
         if(ishandle(main))
             mainHandles             = guidata(main);
@@ -608,10 +764,10 @@ switch CI.FMEXP.indexIMPORT
             set(changeMain,'string',String_Listbox,'value',nCount);
         end   
     case 2  % edit selected FTF
-        nCount                      = CI.FMEXP.indexModify;
-        CI.FMEXP.FTF{nCount}       = handles.FMFit;
-        CI.FMEXP.uRatio(nCount)    = handles.FMFit.uRatio; 
-        assignin('base','CI',CI);                  
+        nCount                      = HP.FMEXP.indexModify;
+        HP.FMEXP.FTF{nCount}       = handles.FMFit;
+        HP.FMEXP.uRatio(nCount)    = handles.FMFit.uRatio; 
+        assignin('base','HP',HP);                  
         main = handles.MainGUI;
         if(ishandle(main))
             mainHandles             = guidata(main);
@@ -622,8 +778,8 @@ switch CI.FMEXP.indexIMPORT
             set(changeMain,'string',String_Listbox,'value',nCount);
         end 
 end  
-assignin('base','CI',CI);                   % save the current information to the works
-uiresume(handles.figure);
+assignin('base','HP',HP);                   % save the current information to the works
+delete(handles.figure);
 %
 %--------------------------------------------------------------------------
 %
@@ -632,12 +788,12 @@ function figure_CloseRequestFcn(hObject, eventdata, handles)
 % hObject    handle to figure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(hObject);
+delete(hObject);
 clear TEMP
 %
 %--------------------------------------------------------------------------
 %
-function [F,den,num]=Fcn_fitfrd(FGain, FPhase, freq_band, tau_correction,fitting_level,RD)
+function [F,den,num]=Fcn_fitfrd(FGain, FPhase, freq_band, tau_correction,fitting_level,RD,sys,flag)
 % This function is used to get the transfer function of the unflagged open
 % pipe situation
 % freq_band should be [fmin fmax]
@@ -648,15 +804,20 @@ F.Freq      = fmin:1:fmax;
 F.Gain      = abs(interp1(FGain(:,1)',FGain(:,2)',F.Freq,'linear','extrap'));
 F.Phase     = interp1(FPhase(:,1)',FPhase(:,2)',F.Freq,'linear','extrap');
 F.FTF       = F.Gain.*exp(1i.*F.Phase);
-F.FTF_corr  = F.FTF.*exp(-1i.*2*pi*F.Freq.*tau_correction);
+F.FTF_corr  = F.FTF.*exp(1i.*2*pi*F.Freq.*tau_correction);  % confirmed on 2015/07/23
+
 %-------------------
-F_frd       = frd(F.FTF_corr,2*pi*F.Freq);
-F_fitfrd    = fitfrd(F_frd,fitting_level,RD);
-F_fitfrd_TF = tf(F_fitfrd);
-den_cell    = F_fitfrd_TF.den;
-num_cell    = F_fitfrd_TF.num;
-den         = cell2mat(den_cell);  
-num         = cell2mat(num_cell); 
+switch flag
+    case 1
+        F_frd       = frd(F.FTF_corr,2*pi*F.Freq);
+        F_fitfrd    = fitfrd(F_frd,fitting_level,RD);
+        F_fitfrd_TF = tf(F_fitfrd);
+        [num,den]   = tfdata(F_fitfrd_TF,'v');
+    case 2   % in case the sys is from an external file
+        [num,den]   = tfdata(sys,'v');
+end
+
+
 %
 %--------------------------------------------------------------------------
 %
@@ -843,7 +1004,7 @@ if rem(datEdit ,1)~=0
     set(hObject, 'String', num2str(round(datEdit)));
     errordlg('Input must be a positive integer','Error');
 end
-if datEdit >20
+if datEdit >50
     set(hObject, 'String', 2);
     errordlg('Too large input number! Try a smaller one','Error');
 end
@@ -906,3 +1067,159 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 %
 %----------------------------end-------------------------------------------
+
+
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+Fig = figure;
+set(Fig,        'units','points')
+posFig = get(handles.figure,'position');
+copyobj(handles.axes1, Fig);
+copyobj(handles.axes2, Fig);
+
+hAxes = get(Fig,'children');
+set(hAxes(1),       'units','points',...
+                    'position',[80 60 200 150],...
+                    'ActivePositionProperty','position')
+set(hAxes(2),       'units','points',...
+                    'position',[80 210 200 150],...
+                    'ActivePositionProperty','position')
+pos1=get(hAxes(1),'position');
+pos2=get(hAxes(2),'position');
+posAxesOuter = [0 0 310 400];
+set(Fig,        'units','points',...
+                'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
+                            posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
+                            posAxesOuter(3:4)])   
+
+
+% --- Executes on selection change in pop_source.
+function pop_source_Callback(hObject, eventdata, handles)
+% hObject    handle to pop_source (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pop_source contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pop_source
+% pop_type=get(hObject,'Value');
+% switch pop_type
+%     case 1
+%         set(handles.edit_FIT_a3,        'enable','on');
+%         set(handles.text_FIT_a4,        'visible','on'); 
+%         set(handles.text_FIT_a5,        'visible','on'); 
+%         set(handles.edit_FIT_a4,        'visible','on'); 
+%         set(handles.edit_FIT_a5,        'visible','on');
+%         set(handles.pb_sys_load,        'visible','off'); 
+%         set(handles.pb_fitfrd,         'enable','on');
+%     case 2
+%         set(handles.edit_FIT_a3,        'enable','off');
+%         set(handles.text_FIT_a4,        'visible','off'); 
+%         set(handles.text_FIT_a5,        'visible','off'); 
+%         set(handles.edit_FIT_a4,        'visible','off'); 
+%         set(handles.edit_FIT_a5,        'visible','off');
+%         set(handles.pb_sys_load,        'visible','on');
+%         set(handles.pb_fitfrd,         'enable','off');
+% end
+Fcn_sys_source_pop_update(hObject);
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function pop_source_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pop_source (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+
+
+% --- Executes on selection change in pop_plot.
+function pop_plot_Callback(hObject, eventdata, handles)
+% hObject    handle to pop_plot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pop_plot contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pop_plot
+pop_type=get(hObject,'Value');
+pannelsize=get(handles.uipanel_Axes,'position');
+pW=pannelsize(3);
+pH=pannelsize(4);   
+switch pop_type
+    case 1
+        set(handles.axes1,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*2/10 pH*5.0/10 pW*6/10 pH*3.5/10],...
+                        'fontsize',handles.FontSize(1),...
+                        'color',handles.bgcolor{1},...
+                        'box','on','visible','on');  
+        set(handles.axes2,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*2/10 pH*1.5/10 pW*6/10 pH*3.5/10],...
+                        'fontsize',handles.FontSize(1),...
+                        'color',handles.bgcolor{1},...
+                        'box','on','visible','on'); 
+    case 2
+        set(handles.axes1,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*2/10 pH*1.5/10 pW*7/10 pH*7/10],...
+                        'fontsize',handles.FontSize(1),...
+                        'color',handles.bgcolor{1},...
+                        'box','on','visible','on');  
+        set(handles.axes2,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*2/10 pH*1.5/10 pW*7/10 pH*3.5/10],...
+                        'fontsize',handles.FontSize(1),...
+                        'color',handles.bgcolor{1},...
+                        'box','on','visible','off'); 
+ end
+guidata(hObject, handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function pop_plot_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pop_plot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_fRange_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_fRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_fRange as text
+%        str2double(get(hObject,'String')) returns contents of edit_fRange as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_fRange_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_fRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

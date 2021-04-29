@@ -83,7 +83,8 @@ switch indexEdit
             % Initialization
             GUI_FREQ_EigCal_AD_Initialization(hObject, eventdata, handles)
         end
-        % Update handles structure
+        guidata(hObject, handles);
+        handles.output = hObject;
         guidata(hObject, handles);
         if dontOpen
            disp('-----------------------------------------------------');
@@ -92,7 +93,7 @@ switch indexEdit
            disp('parent directory!')
            disp('-----------------------------------------------------');
         else
-           uiwait(hObject);
+%            uiwait(hObject);
         end
     case 1
         global CI
@@ -116,7 +117,9 @@ switch indexEdit
         assignin('base','CI',CI);                   % save the current information to the works
         guidata(hObject, handles); 
         GUI_FREQ_EigCal_AD_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
+        guidata(hObject, handles);
+        handles.output = hObject;
+        guidata(hObject, handles);
 end
 %
 %--------------------------------------------------------------------------
@@ -127,7 +130,7 @@ handles = guidata(hObject);
 global CI
 switch CI.IsRun.GUI_FREQ_EigCal_AD 
     case 0
-        CI.EIG.Scan.FreqMin = 1;
+        CI.EIG.Scan.FreqMin = 0;
         CI.EIG.Scan.FreqMax = 1000;
         CI.EIG.Scan.FreqNum = 10;
         CI.EIG.Scan.GRMin   = -200;
@@ -365,7 +368,7 @@ CI.EIG.Scan.GRMax   = str2double(get(handles.edit_GR_a2,'String'));
 CI.EIG.Scan.GRNum   = str2double(get(handles.edit_GR_a3,'String'));
 CI.IsRun.GUI_FREQ_EigCal_AD = 1;
 assignin('base','CI',CI); 
-uiresume(handles.figure);
+delete(handles.figure);
 %
 %--------------------------------------------------------------------------
 %
@@ -391,7 +394,7 @@ function pb_Cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_Cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(handles.figure);
+delete(handles.figure);
 %
 %--------------------------------------------------------------------------
 %
@@ -403,8 +406,9 @@ function varargout = GUI_FREQ_EigCal_AD_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = [];
-delete(hObject);
+try
+varargout{1} = handles.output;
+end
 %
 %--------------------------------------------------------------------------
 %
@@ -513,11 +517,11 @@ a1 = str2double(get(handles.edit_FREQ_a1, 'string'));
 a2 = str2double(get(handles.edit_FREQ_a2, 'string'));
 a3 = str2double(get(handles.edit_FREQ_a3, 'string'));
 if isnan(a1)
-    set(handles.edit_FREQ_a1, 'String', 1);
+    set(handles.edit_FREQ_a1, 'String', 0);
     errordlg('Input must be a number','Error');
 end
 if a2 <= a1
-    set(handles.edit_FREQ_a1, 'String', 1);
+    set(handles.edit_FREQ_a1, 'String', 0);
     set(handles.edit_FREQ_a2, 'String', 1000);
     errordlg('Minimum value input must be smaller than Maximum value input','Error');
 end
@@ -607,6 +611,6 @@ function figure_CloseRequestFcn(hObject, eventdata, handles)
 % hObject    handle to figure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(hObject);
+delete(hObject);
 %
 %------------------------------end-----------------------------------------

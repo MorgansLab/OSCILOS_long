@@ -22,7 +22,7 @@ function varargout = GUI_INI_BC_Entropy(varargin)
 
 % Edit the above text to modify the response to help GUI_INI_BC_Entropy
 
-% Last Modified by GUIDE v2.5 06-Oct-2014 13:20:30
+% Last Modified by GUIDE v2.5 16-Dec-2014 08:28:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -82,7 +82,8 @@ switch indexEdit
             % Initialization
             GUI_INI_BC_Entropy_Initialization(hObject, eventdata, handles)
         end
-        % Update handles structure
+        guidata(hObject, handles);
+        handles.output = hObject;
         guidata(hObject, handles);
         if dontOpen
            disp('-----------------------------------------------------');
@@ -91,7 +92,7 @@ switch indexEdit
            disp('parent directory!')
            disp('-----------------------------------------------------');
         else
-           uiwait(hObject);
+%            uiwait(hObject);
         end
     case 1
         global CI
@@ -114,7 +115,8 @@ switch indexEdit
         assignin('base','CI',CI);                   % save the current information to the works
         guidata(hObject, handles);  
         GUI_INI_BC_Entropy_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
+        handles.output = hObject;
+        guidata(hObject, handles);
 end
 
 
@@ -275,48 +277,63 @@ pH=pannelsize(4);
 set(handles.pb_Apply,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.4/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*1/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Plot',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_SaveFig,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2.8/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save figure',...
                         'backgroundcolor',handles.bgcolor{3},...
-                        'enable','off'); 
+                        'enable','off',...
+                        'visible','off'); 
 set(handles.pb_OK,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.2/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','OK',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_Cancel,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*7.6/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*7/10 pH*2/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Cancel',...
                         'backgroundcolor',handles.bgcolor{3});
 guidata(hObject, handles);
 %
+global ET
 switch CI.IsRun.GUI_INI_BC_Entropy 
     case 0
-        CI.BC.ET.pop_type_model         = 2;
-        CI.BC.ET.Dissipation.k          = 1;
-        CI.BC.ET.Dispersion.Delta_tauCs = 3e-3;
-        set(handles.pop_Disp_model, 'value',CI.BC.ET.pop_type_model);
-        set(handles.edit_dissipation,'string',num2str(CI.BC.ET.Dissipation.k));
-        set(handles.edit_Delta_tauCs,'string',num2str(CI.BC.ET.Dispersion.Delta_tauCs.*1e3));
+        ET.pop_type_model         = 2;
+        ET.Dissipation.k          = 1;
+        ET.Dispersion.Delta_tauCs = 3e-3;
+        set(handles.pop_Disp_model, 'value',ET.pop_type_model);
+        set(handles.edit_dissipation,'string',num2str(ET.Dissipation.k));
+        set(handles.edit_Delta_tauCs,'string',num2str(ET.Dispersion.Delta_tauCs.*1e3));
     case 1
-        set(handles.pop_Disp_model, 'value',CI.BC.ET.pop_type_model);
-        set(handles.edit_dissipation,'string',num2str(CI.BC.ET.Dissipation.k));
-        set(handles.edit_Delta_tauCs,'string',num2str(CI.BC.ET.Dispersion.Delta_tauCs.*1e3));
+        % B.B. 10/07/2019 START - now load from 'TEMP' IF the entropy
+        % properties have changed during this session of the BC window i.e.
+        % when the user has opened the BC window, changed the entropy
+        % properties in that window, closed the entropy window, and opened
+        % it again
+        if CI.BC.ET.hasChanged == true
+            set(handles.pop_Disp_model, 'value',CI.BC.ET.pop_type_model_TEMP);
+            set(handles.edit_dissipation,'string',num2str(CI.BC.ET.Dissipation.k_TEMP));
+            set(handles.edit_Delta_tauCs,'string',num2str(CI.BC.ET.Dispersion.Delta_tauCs_TEMP.*1e3));
+        else
+            set(handles.pop_Disp_model, 'value',CI.BC.ET.pop_type_model);
+            set(handles.edit_dissipation,'string',num2str(CI.BC.ET.Dissipation.k));
+            set(handles.edit_Delta_tauCs,'string',num2str(CI.BC.ET.Dispersion.Delta_tauCs.*1e3));
+        end
+        % B.B. 10/07/2019 STOP 
 end
 %
+assignin('base','ET',ET);                   % save the current information to the workspace
 Fcn_GUI_INI_BC_Entropy_update_plot(hObject)
 guidata(hObject, handles);
 
@@ -324,16 +341,16 @@ guidata(hObject, handles);
 function Fcn_GUI_INI_BC_Entropy_update_plot(varargin)
 hObject     = varargin{1};
 handles     = guidata(hObject);
-global CI
+global ET
 hAxes1      = handles.axes1;
 fontSize1   = handles.FontSize(1);
 fontSize2   = handles.FontSize(2);
 % -------------
-CI.BC.ET.pop_type_model             = get(handles.pop_Disp_model,'Value');
-CI.BC.ET.Dispersion.Delta_tauCs     = 1e-3*str2num(get(handles.edit_Delta_tauCs,'String'));
-CI.BC.ET.Dissipation.k              = str2num(get(handles.edit_dissipation,'String'));  
-DtCs                                = CI.BC.ET.Dispersion.Delta_tauCs;
-k                                   = CI.BC.ET.Dissipation.k;
+ET.pop_type_model               = get(handles.pop_Disp_model,'Value');
+ET.Dispersion.Delta_tauCs       = 1e-3*str2num(get(handles.edit_Delta_tauCs,'String'));
+ET.Dissipation.k                = str2num(get(handles.edit_dissipation,'String'));  
+DtCs                            = ET.Dispersion.Delta_tauCs;
+k                               = ET.Dissipation.k;
 % --------
 cla(hAxes1)
 axes(hAxes1)
@@ -361,7 +378,7 @@ switch pop_plot
         set(hYlabel,'Unit','points');
         posYlabel = get(hYlabel,'position');
         set(hYlabel,'position',[-30 70 0]);
-        switch CI.BC.ET.pop_type_model
+        switch ET.pop_type_model
             case 1
                 Eout = 0*tSp;
                 Eout((N+1)./2) = 1;
@@ -433,7 +450,7 @@ switch pop_plot
         set(hYlabel,'Unit','points');
         posYlabel = get(hYlabel,'position');
         set(hYlabel,'position',[-30 70 0]);
-        switch CI.BC.ET.pop_type_model
+        switch ET.pop_type_model
             case 1
                 Etf = fSp.*0 + 1;
                 Tr = 1;
@@ -441,14 +458,18 @@ switch pop_plot
                 Etf = abs(exp((DtCs.*s).^2./4));
                 Tr = 1;
             case 3
-                Etf = abs(sinc(2*pi*fSp.*DtCs./pi));
+                % Etf = abs(sinc(2*pi*fSp.*DtCs./pi)); %B.B. 12/07/2019 START ->
+                % now using exponential form as per email discussion on 12/07/2019 
+                %between Dong, Aimee and bertie
+                Etf = abs((exp(DtCs*s)-exp(-DtCs*s))./(2*DtCs*s));
                 Tr = 1;
+                % B.B. 12/07/2019 STOP 
         end
         hLine = plot(hAxes1,fSp./1e3,k.*Etf,'-','color','b','linewidth',2);
         set(hAxes1,'ylim',[0 1.2*Tr],'yTick',[0 Tr],'yticklabel',{'0','1'});
 end
 hold off
-assignin('base','CI',CI);                   % save the current information to the workspace
+assignin('base','ET',ET);                   % save the current information to the workspace
 set(handles.pb_SaveFig,                     'enable','on'); 
 guidata(hObject, handles);
 
@@ -461,8 +482,10 @@ function varargout = GUI_INI_BC_Entropy_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = [];
-delete(hObject);
+try
+varargout{1} = handles.output;
+end
+
 
 % --- Executes on button press in pb_OK.
 function pb_OK_Callback(hObject, eventdata, handles)
@@ -470,9 +493,15 @@ function pb_OK_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global CI
+global ET
 Fcn_GUI_INI_BC_Entropy_update_plot(hObject)
+CI.BC.ET.pop_type_model_TEMP = ET.pop_type_model;
+CI.BC.ET.Dissipation.k_TEMP = ET.Dissipation.k;
+CI.BC.ET.Dispersion.Delta_tauCs_TEMP = ET.Dispersion.Delta_tauCs;
+clear ET
 CI.IsRun.GUI_INI_BC_Entropy = 1;
-uiresume(handles.figure);
+CI.BC.ET.hasChanged = true; % B.B. 10/07/2019
+delete(handles.figure);
 
 % --- Executes on button press in pb_Apply.
 function pb_Apply_Callback(hObject, eventdata, handles)
@@ -486,7 +515,7 @@ function pb_Cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_Cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(handles.figure);
+delete(handles.figure);
 
 % --- Executes on button press in pb_SaveFig.
 function pb_SaveFig_Callback(hObject, eventdata, handles)
@@ -603,7 +632,7 @@ function figure_CloseRequestFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: delete(hObject) closes the figure
-uiresume(hObject);
+delete(hObject);
 
 
 % --- Executes on selection change in pop_plot.
@@ -627,3 +656,24 @@ function pop_plot_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
+Fig = figure;
+copyobj(handles.axes1, Fig);
+set(Fig,        'units','points')
+posFig = get(handles.figure,'position');
+hAxes = get(Fig,'children');
+set(hAxes(1),       'units','points',...
+                    'position',[60 60 200 150],...
+                    'ActivePositionProperty','position')
+posAxesOuter = [0 0 300 250];
+set(Fig,        'units','points',...
+                'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
+                            posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
+                            posAxesOuter(3:4)]) 

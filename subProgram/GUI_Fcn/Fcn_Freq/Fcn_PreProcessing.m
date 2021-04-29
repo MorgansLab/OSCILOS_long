@@ -1,4 +1,5 @@
 function Fcn_PreProcessing
+% This function is used to calculate some mean matrix coefficients
 global CI
 %
 Fcn_calculation_Matrix_elements
@@ -23,8 +24,9 @@ CI.TPM.C2 =  [      1   1   0;...
 %
 % -------------------------------------
 %
+indexHA = 0;
 for ss = 1:CI.TP.numSection-1 
-    switch CI.CD.index(ss+1)
+    switch CI.CD.SectionIndex(ss+1)
         case 0
             [B1,B2] = Fcn_Matrix_calculation_WO_Addition_effect(ss,1,1);
             CI.TPM.B1{1,ss}         = B1;               % first step
@@ -32,11 +34,12 @@ for ss = 1:CI.TP.numSection-1
             CI.TPM.B1{2,ss}         = eye(3);           % second step
             CI.TPM.B2{2,ss}         = eye(3);
             CI.TPM.BC{ss}           = (B2*CI.TPM.C2)\(B1*CI.TPM.C1);
-        case 1
+        case {10,11} 
+            indexHA = indexHA + 1;
             [B1,B2] = Fcn_Matrix_calculation_WO_Addition_effect(ss,1,2);
             CI.TPM.B1{1,ss}         = B1;               % first step
             CI.TPM.B2{1,ss}         = B2;
-            [B1a,B2]= Fcn_Matrix_calculation_W_Flame(ss);
+            [B1a,B2]= Fcn_Matrix_calculation_W_HA(ss,indexHA);
             CI.TPM.B1{2,ss}         = B1a;              % second step
             CI.TPM.B2{2,ss}         = B2;
             CI.TPM.BC{ss}           = eye(3);
@@ -46,14 +49,14 @@ assignin('base','CI',CI)
 %
 % -------------------------------------------------------------------------
 %
-function [B1a,B2] = Fcn_Matrix_calculation_W_Flame(ss)
+function [B1a,B2] = Fcn_Matrix_calculation_W_HA(ss,indexHA)
 global CI
 cRatio  = CI.TP.c_mean(1,ss+1)./CI.TP.c_mean(2,ss+1);
 M1      = CI.TP.M_mean(2,ss+1);
 M2      = CI.TP.M_mean(1,ss+1);
 gamma1  = CI.TP.gamma(2,ss+1);
 gamma2  = CI.TP.gamma(1,ss+1);
-HA      = CI.TP.DeltaHr./CI.TP.c_mean(2,ss+1).^2;
+HA      = 1.00*CI.TP.DeltaHr(indexHA)./CI.TP.c_mean(2,ss+1).^2;
 % ----------------------------------       
 B1a(1,1) =   0;
 B1a(1,2) =   cRatio;

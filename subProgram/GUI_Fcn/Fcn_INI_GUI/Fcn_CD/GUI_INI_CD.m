@@ -22,7 +22,7 @@ function varargout = GUI_INI_CD(varargin)
 
 % Edit the above text to modify the response to help GUI_INI_CD
 
-% Last Modified by GUIDE v2.5 09-Oct-2014 14:53:30
+% Last Modified by GUIDE v2.5 15-Dec-2014 22:59:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -43,8 +43,9 @@ else
 end
 
 % End initialization code - DO NOT EDIT
-
-
+%
+% -------------------------------------------------------------------------
+%
 % --- Executes just before GUI_INI_CD is made visible.
 function GUI_INI_CD_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
@@ -52,11 +53,9 @@ function GUI_INI_CD_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to GUI_INI_CD (see VARARGIN)
-%--------------------------------------------------------------------------
 indexEdit = 0;
 switch indexEdit 
     case 0
-        %--------------------------------------------------------------------------
         dontOpen = false;
         mainGuiInput = find(strcmp(varargin, 'OSCILOS_long'));
         if (isempty(mainGuiInput)) ...
@@ -81,6 +80,7 @@ switch indexEdit
             handles.sH = mainHandles.sH;
             % Update handles structure
             guidata(hObject, handles);
+            handles.output = hObject;
             % Initialization
             GUI_INI_CD_Initialization(hObject, eventdata, handles)
         end
@@ -93,7 +93,8 @@ switch indexEdit
            disp('parent directory!')
            disp('-----------------------------------------------------');
         else
-           uiwait(hObject);
+
+%            uiwait(hObject);
         end
     case 1
         global CI
@@ -113,34 +114,31 @@ switch indexEdit
             handles.FontSize(2)=10;   
         end
         guidata(hObject, handles);
-        CI.Ru = 8.3145;
-        CI.W_air=28.96512;
-        CI.R_air=CI.Ru./CI.W_air.*1000;
+        handles.output = hObject;
+        guidata(hObject, handles);
+        CI.IsRun.GUI_INI_CD = 0;
         assignin('base','CI',CI);                   % save the current information to the works
         GUI_INI_CD_Initialization(hObject, eventdata, handles)
-        uiwait(hObject);
+%         uiwait(hObject);
 end
+%
+% --- Executes during object creation, after setting all properties.
+function figure_CreateFcn(hObject, eventdata, handles) %#ok<*DEFNU,*INUSD> 
 
-
-
+% -------------------------------------------------------------------------
+%
 function GUI_INI_CD_Initialization(varargin)
 hObject = varargin{1};
 handles = guidata(hObject);
-%--------------------------------------------------------------------------
 global CI
-idExistCI = exist('CI','var');
-if idExistCI == 0
-    CI.IsRun = 1;
-end
-assignin('base','CI',CI);                   % save the current information to the works
 %--------------------------------------
 % positions reconfiguration
 set(0, 'units', 'points');
 screenSize  = get(0, 'ScreenSize');                 % get the screen size
 sW          = handles.sW;                           % screen width
 sH          = handles.sH ;                          % screen height
-FigW=sW.*2/3;                                        % window width
-FigH=sH.*1/2;                                        % window height
+FigW=sW.*7/10;                                        % window width
+FigH=sH.*7/10;                                        % window height
 set(handles.figure,     'units', 'points',...
                         'position',[(screenSize(3)-FigW)./2 (screenSize(4)-FigH)./2 FigW FigH],...
                         'name','Combustor dimensions configurations',...
@@ -150,7 +148,7 @@ set(handles.figure,     'units', 'points',...
 set(handles.uipanel_axes,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*11/20 FigW*19/20 FigH*8.75/20],...
+                        'position',[FigW*0.5/20 FigH*9.25/20 FigW*19/20 FigH*10.5/20],...
                         'Title','Combustor shape preview',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -162,39 +160,34 @@ pW = pannelsize(3);
 pH = pannelsize(4);                
 set(handles.axes1,      'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*1.5/10 pH*2.5/10 pW*8/10 pH*5.5/10],...
+                        'position',[pW*0.75/10 pH*2.0/10 pW*6.25/10 pH*6/10],...
                         'fontsize',handles.FontSize(1),...
-                        'color',handles.bgcolor{1});                      
+                        'color',handles.bgcolor{1});  
 %----------------------------------------
 %
 % default combustor: Rijke tube
 % default combustor dimensions: 
 % Denoting the distance along the tube axis by the vector x_sample
 % Radius by r_sample
-handles.RT.Default = [600 400 50]; % default dimensions of the Rijke tube
-% try
-    idExistCD = any(strcmp('CD',fieldnames(CI)));
-    if idExistCD == 0
-        CI.CD.x_sample = [0 0.6 1.0];
-        CI.CD.r_sample = 50./1000.*[1 1 1];
-        CI.CD.index    = [0 1 0];
-        CI.CD.pop_CD_type = 1;
-    end 
-% catch
-% end
+handles.RT.Default = [300 700 50]; % default dimensions of the Rijke tube
+%
+switch CI.IsRun.GUI_INI_CD
+    case 0
+    CI.CD.x_sample          = [0 0.3 1.0];
+    CI.CD.r_sample          = 50./1000.*[1 1 1];
+    CI.CD.SectionIndex      = [0 11 0];
+    CI.CD.TubeIndex         = [0 0 0];
+    CI.CD.pop_CD_type = 1;
+    otherwise
+end 
 assignin('base','CI',CI);                   % save the current information to the works
 %
-%----------------------------------------
-% Update handles structure
-guidata(hObject, handles);
-Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);        % draw the combustor shape
-
 %----------------------------------------
 % pannels combustor style
 set(handles.uipanel_CB_type,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*8.5/20 FigW*9.5/20 FigH*2.0/20],...
+                        'position',[FigW*0.5/20 FigH*7.25/20 FigW*19/20 FigH*1.75/20],...
                         'Title','',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -215,7 +208,7 @@ set(handles.text_CB_type,...
 set(handles.pop_CB_type,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5/10 pH*3/10 pW*4/10 pH*4/10],...
+                        'position',[pW*5.5/10 pH*3.5/10 pW*3.0/10 pH*4/10],...
                         'fontsize',handles.FontSize(2),...
                         'string',{  'Rijke tube';...
                                     'Load from txt file'},...
@@ -224,45 +217,11 @@ set(handles.pop_CB_type,...
                         'enable','on',...
                         'value',1);  
 %----------------------------------------
-% pannels damper style
-set(handles.uipanel_Damper_type,...
-                        'units', 'points',...
-                        'Fontunits','points',...
-                        'position',[FigW*10/20 FigH*8.5/20 FigW*9.5/20 FigH*2.0/20],...
-                        'Title','',...
-                        'visible','on',...
-                        'highlightcolor',handles.bgcolor{3},...
-                        'borderwidth',1,...
-                        'fontsize',handles.FontSize(2),...
-                        'backgroundcolor',handles.bgcolor{3});
-pannelsize=get(handles.uipanel_CB_type,'position');
-pW=pannelsize(3);
-pH=pannelsize(4); 
-set(handles.text_Damper_TYPE,...
-                        'units', 'points',...
-                        'Fontunits','points',...
-                        'position',[pW*0.5/10 pH*2.5/10 pW*4.5/10 pH*4/10],...
-                        'fontsize',handles.FontSize(2),...
-                        'string','Dampers:',...
-                        'backgroundcolor',handles.bgcolor{3},...
-                        'horizontalalignment','left');                         
-set(handles.pop_Damper_type,...
-                        'units', 'points',...
-                        'Fontunits','points',...
-                        'position',[pW*5/10 pH*3/10 pW*4.0/10 pH*4/10],...
-                        'fontsize',handles.FontSize(2),...
-                        'string',{  'No adding';...
-                                    'Add Damper(s)'},...
-                        'backgroundcolor',handles.bgcolor{1},...
-                        'horizontalalignment','left',...
-                        'enable','on',...
-                        'value',1);                  
-%----------------------------------------
 % pannels Rijke tube configuration
 set(handles.uipanel_Rijke_DM,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*2.5/20 FigW*19.0/20 FigH*6.05/20],...
+                        'position',[FigW*0.5/20 FigH*1.75/20 FigW*19.0/20 FigH*5.25/20],...
                         'Title','',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -275,7 +234,7 @@ pH=pannelsize(4);
 set(handles.text_US,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.5/10 pH*7/10 pW*4/10 pH*1.5/10],...
+                        'position',[pW*0.5/10 pH*7.5/10 pW*4/10 pH*1.5/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Upstream length [mm]:',...
                         'backgroundcolor',handles.bgcolor{3},...
@@ -283,7 +242,7 @@ set(handles.text_US,...
 set(handles.text_DS,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.5/10 pH*4/10 pW*4/10 pH*1.5/10],...
+                        'position',[pW*0.5/10 pH*5.25/10 pW*4/10 pH*1.5/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Downstream length [mm]:',...
                         'backgroundcolor',handles.bgcolor{3},...
@@ -291,7 +250,7 @@ set(handles.text_DS,...
 set(handles.text_Diameter,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.5/10 pH*1.0/10 pW*4/10 pH*1.5/10],...
+                        'position',[pW*0.5/10 pH*3/10 pW*4/10 pH*1.5/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Radius [mm]:',...
                         'backgroundcolor',handles.bgcolor{3},...
@@ -300,7 +259,7 @@ set(handles.text_Diameter,...
 set(handles.ed_US,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.5/10 pH*7.0/10 pW*2/10 pH*2/10],...
+                        'position',[pW*5.5/10 pH*7.5/10 pW*2/10 pH*1.75/10],...
                         'fontsize',handles.FontSize(2),...
                         'string',handles.RT.Default(1),...
                         'backgroundcolor',handles.bgcolor{1},...
@@ -308,7 +267,7 @@ set(handles.ed_US,...
 set(handles.ed_DS,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.5/10 pH*4.0/10 pW*2/10 pH*2/10],...
+                        'position',[pW*5.5/10 pH*5.25/10 pW*2/10 pH*1.75/10],...
                         'fontsize',handles.FontSize(2),...
                         'string',handles.RT.Default(2),...
                         'backgroundcolor',handles.bgcolor{1},...
@@ -316,17 +275,35 @@ set(handles.ed_DS,...
 set(handles.ed_Diameter,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.5/10 pH*1.0/10 pW*2/10 pH*2/10],...
+                        'position',[pW*5.5/10 pH*3/10 pW*2/10 pH*1.75/10],...
                         'fontsize',handles.FontSize(2),...
                         'string',handles.RT.Default(3),...
                         'backgroundcolor',handles.bgcolor{1},...
                         'horizontalalignment','right');
+set(handles.checkbox1,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*0.5/10 pH*0.75/10 pW*4/10 pH*1.5/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','With mean heat addition',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','right',...
+                        'value',1);
+set(handles.checkbox2,...
+                        'units', 'points',...
+                        'Fontunits','points',...
+                        'position',[pW*5.5/10 pH*0.75/10 pW*4/10 pH*1.5/10],...
+                        'fontsize',handles.FontSize(2),...
+                        'string','With heat perturbations',...
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'horizontalalignment','right',...
+                        'value',1);
 %----------------------------------------
 % pannels Load data                    
 set(handles.uipanel_Load,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*2.5/20 FigW*19/20 FigH*6.05/20],...
+                        'position',[FigW*0.5/20 FigH*1.75/20 FigW*19/20 FigH*5.25/20],...
                         'Title',get(handles.uipanel_Rijke_DM,'Title'),...
                         'visible','off',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -354,13 +331,13 @@ set(handles.pb_load,...
                         'string','Load',...
                         'backgroundcolor',handles.bgcolor{3});
 %--------------
-rnames = {'x [mm]','r [mm]','Section index'};
+rnames = {'x [mm]','r [mm]','Section index', 'Tube index'};
 % section index:
 % 0: no flame, heat addition or other damping devices
 % 1: flame or heat addition
 % 2: damping devices
 % ... for future development
-table_data_num      = cat(1,1000*CI.CD.x_sample,1000*CI.CD.r_sample,CI.CD.index);
+table_data_num      = cat(1,1000*CI.CD.x_sample,1000*CI.CD.r_sample,CI.CD.SectionIndex,CI.CD.TubeIndex);
 table_data_cell     = num2cell(table_data_num);
 %
 set(handles.uitable_DM,...
@@ -376,7 +353,7 @@ set(handles.uitable_DM,...
 set(handles.uipanel_AOC,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*2/20],...
+                        'position',[FigW*0.5/20 FigH*0/20 FigW*19/20 FigH*1.5/20],...
                         'Title','',...
                         'visible','on',...
                         'highlightcolor',handles.bgcolor{3},...
@@ -386,72 +363,158 @@ set(handles.uipanel_AOC,...
 pannelsize=get(handles.uipanel_AOC,'position');                    
 pW=pannelsize(3);
 pH=pannelsize(4);                
-set(handles.pb_Apply,...
+set(handles.pb_Plot,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*0.4/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*1/10 pH*1.5/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Plot',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_SaveFig,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*2.8/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1.5/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Save figure',...
-                        'backgroundcolor',handles.bgcolor{3});
+                        'backgroundcolor',handles.bgcolor{3},...
+                        'visible','off');
 set(handles.pb_OK,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*5.2/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*4/10 pH*1.5/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','OK',...
                         'backgroundcolor',handles.bgcolor{3});
 set(handles.pb_Cancel,...
                         'units', 'points',...
                         'Fontunits','points',...
-                        'position',[pW*7.6/10 pH*2/10 pW*2.0/10 pH*6/10],...
+                        'position',[pW*7/10 pH*1.5/10 pW*2.0/10 pH*6/10],...
                         'fontsize',handles.FontSize(2),...
                         'string','Cancel',...
                         'backgroundcolor',handles.bgcolor{3}); 
 guidata(hObject, handles);
+% switch CI.IsRun.GUI_INI_CD
+%     case 1
+%         if CI.IsRun.GUI_INI_PD==1 && (CI.CD.NUM_HR+CI.CD.NUM_Liner) >0
+%             % Enable all the geometry settings
+%             set(handles.pop_CB_type,        'enable','off'); 
+%             set(handles.ed_US,              'enable','off'); 
+%             set(handles.ed_DS,              'enable','off'); 
+%             set(handles.ed_Diameter,        'enable','off'); 
+%             set(handles.checkbox1,          'enable','off'); 
+%             set(handles.checkbox2,          'enable','off'); 
+%             set(handles.pb_load,            'enable','off'); 
+%             set(handles.pb_Plot,            'enable','off');
+%             set(handles.pb_SaveFig,         'enable','off');
+%             set(handles.pb_OK,              'enable','off');
+%             set(handles.pb_Cancel,          'enable','off');
+%             switch CI.CD.pop_CD_type
+%                 case 1
+%                 set(handles.uipanel_Rijke_DM,   'visible','on'); 
+%                 set(handles.uipanel_Load,       'visible','off');    
+%                 case 2
+%                 set(handles.uipanel_Rijke_DM,   'visible','off'); 
+%                 set(handles.uipanel_Load,       'visible','on'); 
+%                 set(handles.uitable_DM,         'data',table_data_cell);
+%                 set(handles.pop_CB_type,        'value',2); 
+%             end
+%         else
+%           switch CI.CD.pop_CD_type
+%             case 1
+%                 set(handles.uipanel_Rijke_DM,   'visible','on'); 
+%                 set(handles.uipanel_Load,       'visible','off'); 
+%                 set(handles.ed_US,              'string', num2str((CI.CD.x_sample(2)-CI.CD.x_sample(1)).*1000));
+%                 set(handles.ed_DS,              'string', num2str((CI.CD.x_sample(3)-CI.CD.x_sample(2)).*1000));
+%                 set(handles.ed_Diameter,        'string', num2str(1000*CI.CD.r_sample(1)));
+%                 set(handles.pop_CB_type,        'value',1);
+%                   if isempty(CI.CD.indexHP) == 0
+%                     set(handles.checkbox1,'value', 1);
+%                     set(handles.checkbox2,'value', 1);
+%                   end
+%                   if isempty(CI.CD.indexHP) == 1 && isempty(CI.CD.indexHA) == 0
+%                     set(handles.checkbox1,'value', 1);
+%                     set(handles.checkbox2,'value', 0);
+%                   end
+%                   if isempty(CI.CD.indexHP) == 1 && isempty(CI.CD.indexHA) == 1
+%                     set(handles.checkbox1,'value', 0);
+%                     set(handles.checkbox2,'value', 0);
+%                   end         
+%             case 2
+%                 set(handles.uipanel_Rijke_DM,   'visible','off'); 
+%                 set(handles.uipanel_Load,       'visible','on'); 
+%                 set(handles.uitable_DM,         'data',table_data_cell);
+%                 set(handles.pop_CB_type,        'value',2);
+%           end
+%         end
+%     otherwise
+% end
 
-indexExist_CI_CD = any(strcmp('CD',fieldnames(CI)));
-if indexExist_CI_CD == 1;
-    switch CI.CD.pop_CD_type
+
+
+switch CI.IsRun.GUI_INI_CD
     case 1
-        set(handles.uipanel_Rijke_DM,   'visible','on'); 
-        set(handles.uipanel_Load,       'visible','off'); 
-        set(handles.ed_US,              'string', num2str((CI.CD.x_sample(2)-CI.CD.x_sample(1)).*1000));
-        set(handles.ed_DS,              'string', num2str((CI.CD.x_sample(3)-CI.CD.x_sample(2)).*1000));
-        set(handles.ed_Diameter,        'string', num2str(1000*CI.CD.r_sample(1)));
-        set(handles.pop_CB_type,        'value',1);
-    case 2
-        set(handles.uipanel_Rijke_DM,   'visible','off'); 
-        set(handles.uipanel_Load,       'visible','on'); 
-        set(handles.uitable_DM,         'data',table_data_cell);
-        set(handles.pop_CB_type,        'value',2);
-    end
+        switch CI.CD.pop_CD_type
+            case 2
+                set(handles.uipanel_Rijke_DM,   'visible','off'); 
+                set(handles.uipanel_Load,       'visible','on'); 
+                set(handles.uitable_DM,         'data',table_data_cell);
+                set(handles.pop_CB_type,        'value',2);
+            case 1     
+                try
+                    if CI.IsRun.GUI_INI_PD==1 && (CI.CD.NUM_HR+CI.CD.NUM_Liner) >0
+                        indexPD = 1;
+                    else 
+                        indexPD = 0;
+                    end
+                catch
+                    indexPD = 0;
+                end
+                if indexPD == 1
+                    % Enable all the geometry settings
+                    set(handles.pop_CB_type,        'enable','off'); 
+                    set(handles.ed_US,              'enable','off'); 
+                    set(handles.ed_DS,              'enable','off'); 
+                    set(handles.ed_Diameter,        'enable','off'); 
+                    set(handles.checkbox1,          'enable','off'); 
+                    set(handles.checkbox2,          'enable','off'); 
+                    set(handles.pb_load,            'enable','off'); 
+                    set(handles.pb_Plot,            'enable','off');
+                    set(handles.pb_SaveFig,         'enable','off');
+                    set(handles.pb_OK,              'enable','off');
+                    set(handles.pb_Cancel,          'enable','off');
+                    set(handles.uipanel_Rijke_DM,   'visible','on'); 
+                    set(handles.uipanel_Load,       'visible','off');  
+                else
+                    set(handles.uipanel_Rijke_DM,   'visible','on'); 
+                    set(handles.uipanel_Load,       'visible','off'); 
+                    set(handles.ed_US,              'string', num2str((CI.CD.x_sample(2)-CI.CD.x_sample(1)).*1000));
+                    set(handles.ed_DS,              'string', num2str((CI.CD.x_sample(3)-CI.CD.x_sample(2)).*1000));
+                    set(handles.ed_Diameter,        'string', num2str(1000*CI.CD.r_sample(1)));
+                    set(handles.pop_CB_type,        'value',1);
+                    if isempty(CI.CD.indexHP) == 0
+                        set(handles.checkbox1,'value', 1);
+                        set(handles.checkbox2,'value', 1);
+                    end
+                    if isempty(CI.CD.indexHP) == 1 && isempty(CI.CD.indexHA) == 0
+                        set(handles.checkbox1,'value', 1);
+                        set(handles.checkbox2,'value', 0);
+                    end
+                    if isempty(CI.CD.indexHP) == 1 && isempty(CI.CD.indexHA) == 1
+                        set(handles.checkbox1,'value', 0);
+                        set(handles.checkbox2,'value', 0);
+                    end         
+                end
+        end
+    otherwise
 end
-
-%% Begin changing by Dong Yang
-% Make sure the combustor geometry cannot be changed if the dampers have
-% been set up
-Damper_NUM=CI.CD.NUM_HR+CI.CD.NUM_Liner;
-         if Damper_NUM>0   % Case after including damper(s), initialise the data according to the combustor type
-            set(handles.pop_CB_type,'enable','off'); 
-            set(handles.ed_US,'enable','off');
-            set(handles.ed_DS,'enable','off');
-            set(handles.ed_Diameter,'enable','off');
-            set(handles.pb_load,'enable','off');
-         end
-%% End changing by Dong Yang
-
-
+%----------------------------------------
+% Update handles structure
 guidata(hObject, handles);
-%--------------------------------------------------------------------------
-
-
+Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);        % draw the combustor shape
+guidata(hObject, handles);
+%
+% -------------------------------------------------------------------------
+%
 % --- Outputs from this function are returned to the command line.
 function varargout = GUI_INI_CD_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -459,15 +522,19 @@ function varargout = GUI_INI_CD_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Get default command line output from handles structure
-varargout{1} = [];
-delete(hObject);
+% varargout{1} = [];
+% delete(hObject);
+try
+varargout{1} = handles.output;
+end
 
 % --- Executes when user attempts to close figure.
 function figure_CloseRequestFcn(hObject, eventdata, handles)
 % hObject    handle to figure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(hObject);
+% uiresume(hObject);
+delete(hObject);
 
 
 function ed_US_Callback(hObject, eventdata, handles)
@@ -478,9 +545,11 @@ function ed_US_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of ed_US as text
 %        str2double(get(hObject,'String')) returns contents of ed_US as a double
 datEdit = str2double(get(hObject, 'String'));
-if isnan(datEdit)
-    set(hObject, 'String', 0);
-    errordlg('Input must be a number','Error');
+ValDefault = 300; 
+if isnan(datEdit) || ~isreal(datEdit) ||datEdit < 0
+    set(hObject, 'String', ValDefault);
+    errordlg('Input must be a non-negative real number','Error');
+    % when the input is not a number, it is set to the default value
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -503,11 +572,12 @@ function ed_DS_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of ed_DS as text
 %        str2double(get(hObject,'String')) returns contents of ed_DS as a double
 datEdit = str2double(get(hObject, 'String'));
-if isnan(datEdit)
-    set(hObject, 'String', 0);
-    errordlg('Input must be a number','Error');
+ValDefault = 700; 
+if isnan(datEdit) || ~isreal(datEdit) ||datEdit < 0
+    set(hObject, 'String', ValDefault);
+    errordlg('Input must be a non-negative real number','Error');
+    % when the input is not a number, it is set to the default value
 end
-
 % --- Executes during object creation, after setting all properties.
 function ed_DS_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to ed_DS (see GCBO)
@@ -529,9 +599,11 @@ function ed_Diameter_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of ed_Diameter as text
 %        str2double(get(hObject,'String')) returns contents of ed_Diameter as a double
 datEdit = str2double(get(hObject, 'String'));
-if isnan(datEdit)
-    set(hObject, 'String', 0);
-    errordlg('Input must be a number','Error');
+ValDefault = 50; 
+if isnan(datEdit) || ~isreal(datEdit) ||datEdit < 0
+    set(hObject, 'String', ValDefault);
+    errordlg('Input must be a non-negative real number','Error');
+    % when the input is not a number, it is set to the default value
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -545,6 +617,37 @@ function ed_Diameter_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+% --- Executes on button press in checkbox1.
+function checkbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Hint: get(hObject,'Value') returns toggle state of checkbox1
+indexHA_mean = get(handles.checkbox1,'value');
+indexHA_pert = get(handles.checkbox2,'value');
+if indexHA_mean == 0 && indexHA_pert == 1
+    set(handles.checkbox1,'value',0);
+    set(handles.checkbox2,'value',0);
+end
+guidata(hObject, handles);
+Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);
+
+
+% --- Executes on button press in checkbox2.
+function checkbox2_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Hint: get(hObject,'Value') returns toggle state of checkbox2
+indexHA_mean = get(handles.checkbox1,'value');
+indexHA_pert = get(handles.checkbox2,'value');
+if indexHA_mean == 0 && indexHA_pert == 1
+    set(handles.checkbox1,'value',1);
+    set(handles.checkbox2,'value',1);
+end
+guidata(hObject, handles);
+Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);
 
 % --- Executes on selection change in pop_CB_type.
 function pop_CB_type_Callback(hObject, eventdata, handles)
@@ -561,33 +664,31 @@ switch pop_CD_type
         set(handles.uipanel_Load,       'visible','off'); 
     case 2
         set(handles.uipanel_Rijke_DM,   'visible','off'); 
-        set(handles.uipanel_Load,       'visible','on'); 
+        set(handles.uipanel_Load,       'visible','on');        
         string={...
-            'The default txt file named as ''CD_example.txt'' is automatically';...
-            'created in the directory ''subProgram''.'
-            'The default data format is:';...
-            'x [m]    r[m]    section index';...
-            '0        0.05    0';...
-            '0.2      0.01    1';...
-            '...'
-            '0.5      0.07    2';...
-            '...'
-            'where, x means axial position of each sectional interface,';...
-            'r indicates the radius of each section,';...
-            'section index represents the type of sectional interface:';...
-            '0: only sectional area surface change';...
-            '1: with heat addition';...
-            '2: with Helmholtz resonator';...
-            '30:left end of a perforated liner';...
-            '31:right end of a perforated liner'};
+        'The default txt file named as ''CD_example.txt'' is automatically';...
+        'created in the directory ''subProgram''.'
+        'The default data format is:';...
+        'x [m]    r[m]    InterfaceIndex     ModuleIndex';...
+        '0        0.05    0                0';...
+        '0.2      0.01    0                1';...
+        '0.3      0.03    0                0';...
+        '...'
+        '0.5      0.07    11               0';...
+        '0.6      0.07    0                0';...
+        '...'
+        'where, x means axial position of each sectional interface,';...
+        'r indicates the radius of each section,';...
+        'InterfaceIndex represents the type of interface between modules:';...
+        '0: a simple area change';...
+        '10: with heat addition, but without heat perturbation';...
+        '11: with heat addition and heat perturbations';...
+        'ModuleIndex indicates the type of tube between';...
+        'this and the following interface'
+        '0: straight constant area duct';...
+        '1: duct with linearly changing radius'};
         helpdlg(string,'Load combustor dimensions from an external txt file')
-end
-%% Begin changing by Dong Yang
-% To make sure CI.CD.pop_CD_type is right if enter into Damper setting without update the CD geometry.
-global CI
-CI.CD.pop_CD_type = get(handles.pop_CB_type,'Value');
-assignin('base','CI',CI); 
-%% End changing by Dong Yang  
+ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -625,20 +726,34 @@ if filename~=0
     fid=fopen(filename);
 %     frewind(fid);                                     % index the first row
     C_title         = textscan(fid, '%s', 4);           % read title
-    C_cell          = textscan(fid, '%f %f %f');        % read numeric data
+    C_cell          = textscan(fid, '%f %f %f %f');        % read numeric data
     fclose(fid);
     data_num(1,:)   = C_cell{1}.*1000;
     data_num(2,:)   = C_cell{2}.*1000;
     data_num(3,:)   = C_cell{3};
+    data_num(4,:)   = C_cell{4};
     data_cell       = num2cell(data_num);
     set(handles.uitable_DM,'data',data_cell);         % Update the table
-    %% Begin changing by Dong Yang
-    CI.CD.x_sample = data_num(1,:)/1000;                    
-    CI.CD.r_sample = data_num(2,:)/1000;               
-    CI.CD.index    = data_num(3,:);  
-    assignin('base','CI',CI); 
-    %% End changing by Dong Yang
+    CI.CD.x_sample      = C_cell{1};                    
+    CI.CD.r_sample      = C_cell{2};               
+    CI.CD.SectionIndex  = C_cell{3};      
+    CI.CD.TubeIndex     = C_cell{4};     
 end
+assignin('base','CI',CI)
+%
+CI.CD.indexGC   = find(CI.CD.TubeIndex == 1);       % locate the gradually area change section
+CI.CD.isNoGC    = isempty(CI.CD.indexGC);
+assignin('base','CI',CI)
+Fcn_CD_Load_Processing
+assignin('base','CI',CI)
+% -----------------------
+clear data_num
+data_num(1,:)   = CI.CD.x_sample'.*1e3;
+data_num(2,:)   = CI.CD.r_sample'.*1e3;
+data_num(3,:)   = CI.CD.SectionIndex';
+data_num(4,:)   = CI.CD.TubeIndex';
+set(handles.uitable_DM,'data',num2cell(data_num));         % Update the table
+% -----------------------
 % Update handles structure
 guidata(hObject, handles);
  
@@ -647,15 +762,25 @@ function pb_OK_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_OK (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Fcn_GUI_INI_CD_Update_Data(hObject, eventdata, handles);
-uiresume(handles.figure);
+% Fcn_GUI_INI_CD_Update_Data(hObject, eventdata, handles);
+global CI
+handles = guidata(hObject);
+guidata(hObject, handles);
+Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);        % draw the combustor shap
 
-% --- Executes on button press in pb_Apply.
-function pb_Apply_Callback(hObject, eventdata, handles)
-% hObject    handle to pb_Apply (see GCBO)
+CI.IsRun.GUI_INI_CD = 1;
+Fcn_GUI_INI_CD_Update_Data(hObject);
+Fcn_GUI_INI_CD_Update_Main_GUI(hObject);
+Fcn_Interface_location
+assignin('base','CI',CI); 
+delete(handles.figure);
+
+% --- Executes on button press in pb_Plot.
+function pb_Plot_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_Plot (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Fcn_GUI_INI_CD_Update_Data(hObject, eventdata, handles);
+% Fcn_GUI_INI_CD_Update_Data(hObject, eventdata, handles);
 handles = guidata(hObject);
 guidata(hObject, handles);
 Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);        % draw the combustor shape   
@@ -668,6 +793,7 @@ function pb_SaveFig_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = guidata(hObject);
+hFontsize1  = handles.FontSize(1);
 Fig     = figure;
 set(Fig,'units','points')
 posFig = get(handles.figure,'position');
@@ -675,503 +801,161 @@ copyobj(handles.axes1, Fig);
 hAxes = get(Fig,'children');
 set(hAxes,      'units','points',...
                 'position',[60 60 400 150])
-posAxesOuter = [0 0 500 250];
+posAxes = get(hAxes,'position');
+posAxesOuter = [0 0 800 400];
 set(Fig,        'units','points',...
                 'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
                              posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
-                             posAxesOuter(3:4)]) 
+                             posAxesOuter(3:4)])
+% -------------legend ---------------
+newline = char(10);
+legend1 = ['with mean heat addition', newline, 'and heat perturbations'];
+legend2 = ['with mean heat addition', newline, 'but no heat perturbations'];
+hlegend = legend(hAxes,...
+                        'inlet','outlet',...
+                        legend1,...
+                        legend2);
+set(hlegend,'fontsize',hFontsize1,'location','northeastoutside');
+set(hAxes,'position',posAxes)
+% hl=legend('show');
+% set(hl,'interpreter','latex','Fontsize',handles.FontSize(2),'box','off','Unit','points')
 
 % --- Executes on button press in pb_Cancel.
 function pb_Cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_Cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(handles.figure);
+delete(handles.figure);
 
 % --- plot the combustor shape
 function Fcn_GUI_INI_CD_Plot_CD_Shape(varargin)
-% ------------------------------
-% Begin changing by Dong Yang (Use the same plot function as that used in GUI_INI_CD_Damper)
 hObject = varargin{1};
+Fcn_GUI_INI_CD_Update_Data(hObject);
 handles = guidata(hObject);
+guidata(hObject, handles);
+Fcn_CD_plot_with_dampers(handles.axes1,handles,1)
+%
 % 
-global CI
-x_sample =      CI.CD.x_sample;                
-r_sample =      CI.CD.r_sample;
-index=          CI.CD.index;
+% %%% Yang Dong's change, does not work! 
+% %%% Start
+% % --- Update the data 
+% function Fcn_GUI_INI_CD_Update_Data(varargin)
+% hObject = varargin{1};
+% handles = guidata(hObject);
+% global CI
+% CI.CD.pop_CD_type=get(handles.pop_CB_type,'Value');
+% switch CI.IsRun.GUI_INI_CD
+%     case 0
+%     switch CI.CD.pop_CD_type    
+%        case 1
+%         l(1)    = 0;
+%         l(2)    = str2num(get(handles.ed_US,'string'));
+%         l(3)    = str2num(get(handles.ed_DS,'string'));
+%         r       = str2num(get(handles.ed_Diameter,'string'))./1000;
+%         indexHA_mean = get(handles.checkbox1,'value');
+%         indexHA_pert = get(handles.checkbox2,'value');
+%         CI.CD.x_sample = cumsum(l)./1000;
+%         CI.CD.r_sample = 0*CI.CD.x_sample + r;
+%         if indexHA_mean == 1 && indexHA_pert == 1
+%             CI.CD.SectionIndex = [0 11 0];             % with heat addition and heat perturbations
+%         elseif indexHA_mean == 1 && indexHA_pert == 0
+%             CI.CD.SectionIndex = [0 10 0];             % with heat addition but heat perturbations
+%         elseif indexHA_mean == 0 && indexHA_pert == 0
+%             CI.CD.SectionIndex = [0 0 0];              % without heat addition
+%         end
+%         CI.CD.TubeIndex = [0 0 0]; 
+%        case 2
+%         data_cell = get(handles.uitable_DM,'data');
+%         CI.CD.x_sample          = cell2mat(data_cell(1,:))./1000;
+%         CI.CD.r_sample          = cell2mat(data_cell(2,:))./1000;
+%         CI.CD.SectionIndex      = cell2mat(data_cell(3,:));
+%         CI.CD.TubeIndex         = cell2mat(data_cell(4,:));
+%        otherwise
+%         % Code for when there is no match.
+%     end
+% otherwise
+% end 
+% 
+% %Compute the length downstream of a flame. If a flame is at the end of a section, use the min to set that to 0
+% %index_flame =   find(CI.CD.SectionIndex==11);
+% %CI.CD.dowst_of_heat_lengths = CI.CD.x_sample(min(index_flame + 1,end)) - CI.CD.x_sample(index_flame);
+% %CI.CD.index_flame = index_flame; % This is needed for other functions
+% 
+% %
+% assignin('base','CI',CI);                   % save the current information to the workspace
+% %%% end
 
-% Check if damper exists. 
-idExistHR=any(strcmp('NUM_HR',fieldnames(CI.CD)));
-idExistLiner=any(strcmp('NUM_Liner',fieldnames(CI.CD)));
-if idExistHR==0
-CI.CD.NUM_HR      = 0;
-CI.CD.HR_config   = [];
-else
-CI.CD.NUM_HR      = CI.CD.NUM_HR;
-CI.CD.HR_config   = CI.CD.HR_config;
-end
 
-if idExistLiner==0
-CI.CD.NUM_Liner      = 0;
-CI.CD.Liner_config   = [];
-else
-CI.CD.NUM_Liner      = CI.CD.NUM_Liner;
-CI.CD.Liner_config   = CI.CD.Liner_config;
-end
-
-
-% Define Liner_config for Liner plotting
-NUM_Liner=CI.CD.NUM_Liner;
-if NUM_Liner==0
-    Liner_config=[];
-else
-    Liner_config=CI.CD.Liner_config;
-end
-
-
-%-------------------------------------
-W           = abs(max(x_sample) - min(x_sample));            % Length of the combustor
-H           = 3*max(r_sample);          % Diameter of the combustor
-plot_ratio  = 1.5;             % Ratio of the axes limit to the combustor dimension
-axes_W      = plot_ratio*W;        % axes x width
-axes_H      = 2*plot_ratio*H;      % axes y width        
-x_min       = x_sample(1) - (axes_W-W)./2;       % axes x min
-y_min       = -axes_H./2;           % axes y min
-%--------------------------------------
-hAxes = handles.axes1;
-cla(hAxes);                             % clear the current axes 
-axis(hAxes)
-hold on
-%--------------------------------------
-% Plot the approximate profile of the combustor which consisting of several
-% sections 
-NUM_Liner_note=1;
-NUM_HR_note=1;
-% Configure the visual scale of the HRs
-HR_neck_width=axes_W/100;
-HR_neck_length=0.2*max(r_sample);
-HR_cavity_width=axes_W/35;
-HR_cavity_length=max(r_sample);
-for s=1:length(x_sample)-1
-    if index(s)==2
-        x_plot0=1000*[x_sample(s),x_sample(s)];
-        x_plot1=1000*[x_sample(s),x_sample(s+1)];
-        x_plot2=1000*[x_sample(s),x_sample(s+1)-HR_neck_width/2];
-        x_plot3=1000*[x_sample(s)+HR_neck_width/2,x_sample(s+1)-HR_neck_width/2];
-        x_plot4=1000*[x_sample(s)+HR_neck_width/2,x_sample(s+1)];
-        x_plot5=1000*[x_sample(s+1),x_sample(s+1)];
-        
-        y_plot0=1000*[-r_sample(s),r_sample(s)];
-        y_plot1=1000*[r_sample(s),r_sample(s)];
-        y_plot2=1000*[-r_sample(s),-r_sample(s)];
-        if index(s+1)==2
-          line (x_plot3, y_plot1,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-          line (x_plot1, y_plot2,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-        else if index(s+1)==30
-                line (x_plot4, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            else
-                line (x_plot4, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot5, y_plot0,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            end
-        end
-    else if index(s)==30
-        x_plot1=1000*[x_sample(s),x_sample(s+1)];
-        y_plot1=1000*[r_sample(s),r_sample(s)];
-        y_plot2=1000*[-r_sample(s),-r_sample(s)];
-                line (x_plot1, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','--',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','--',...
-                   'Color','k',...
-                   'Parent',hAxes);
-        
-    else if index(s)==31
-        x_plot1=1000*[x_sample(s),x_sample(s+1)];
-        x_plot2=1000*[x_sample(s),x_sample(s+1)-HR_neck_width/2];
-        x_plot5=1000*[x_sample(s+1),x_sample(s+1)];
-        
-        y_plot0=1000*[-r_sample(s),r_sample(s)];
-        y_plot1=1000*[r_sample(s),r_sample(s)];
-        y_plot2=1000*[-r_sample(s),-r_sample(s)];
-        if index(s+1)==2
-          line (x_plot2, y_plot1,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-          line (x_plot1, y_plot2,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-        else if index(s+1)==30
-                line (x_plot1, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            else
-                line (x_plot1, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot5, y_plot0,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            end
-        end 
-        
-    else
-        x_plot0=1000*[x_sample(s),x_sample(s)];
-        x_plot1=1000*[x_sample(s),x_sample(s+1)];
-        x_plot2=1000*[x_sample(s),x_sample(s+1)-HR_neck_width/2];
-        x_plot5=1000*[x_sample(s+1),x_sample(s+1)];
-        
-        y_plot0=1000*[-r_sample(s),r_sample(s)];
-        y_plot1=1000*[r_sample(s),r_sample(s)];
-        y_plot2=1000*[-r_sample(s),-r_sample(s)];
-        
-        line (x_plot0, y_plot0,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-        if index(s+1)==2 
-          line (x_plot2, y_plot1,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-          line (x_plot1, y_plot2,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-        else if index(s+1)==30
-                line (x_plot1, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            else
-                line (x_plot1, y_plot1,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot1, y_plot2,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-                line (x_plot5, y_plot0,...
-                   'LineWidth', 1,...
-                   'LineStyle','-',...
-                   'Color','k',...
-                   'Parent',hAxes);
-            end
-        end  
-        end
-        end       
-    end
-        
-    % plot the flame sheet
-    if index(s)==1
-    rectangle(  'Position',1000*[x_sample(s),-r_sample(s),...
-                axes_W/100,...
-                2*r_sample(s)],...
-                'Curvature',[0,0],'LineWidth',1,'LineStyle','-','facecolor','r',...
-                'Parent',hAxes);
-    text(1000*x_sample(s), 1000*2.5*max(r_sample),...
-    'flame','FontSize',12,...
-    'interpreter','latex','HorizontalAlignment','center',...
-    'Parent',hAxes);
-    end
-    % plot the HR
-    if index(s)==2
-        x_plot=1000*[x_sample(s)-HR_neck_width/2, x_sample(s)-HR_neck_width/2, x_sample(s)-HR_cavity_width/2,  x_sample(s)-HR_cavity_width/2,               x_sample(s)+HR_cavity_width/2,               x_sample(s)+HR_cavity_width/2, x_sample(s)+HR_neck_width/2, x_sample(s)+HR_neck_width/2];
-        y_plot=1000*[r_sample(s),                 r_sample(s)+HR_neck_length,  r_sample(s)+HR_neck_length,    r_sample(s)+HR_neck_length+HR_cavity_length,  r_sample(s)+HR_neck_length+HR_cavity_length, r_sample(s)+HR_neck_length,    r_sample(s)+HR_neck_length,  r_sample(s)];
-        line (x_plot, y_plot,...
-            'LineWidth', 1,...
-            'LineStyle','-',...
-            'Color','k',...
-            'Parent',hAxes);
-        text(1000*x_sample(s), -1000*1.5*max(r_sample),...
-             ['HR',num2str(NUM_HR_note)],'FontSize',9,...
-             'interpreter','latex','HorizontalAlignment','center',...
-             'Parent',hAxes);
-        NUM_HR_note=NUM_HR_note+1; 
-    end
-    % plot the Liner
-        if index(s)==30
-            if Liner_config(NUM_Liner_note,4)==0
-                    if Liner_config(NUM_Liner_note,5)==0
-                            x_plot=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plot=1000*[r_sample(s),    r_sample(s)*3,  r_sample(s)*3, r_sample(s)];
-                            line (x_plot, y_plot,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            x_plotn=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plotn=1000*[-r_sample(s),-r_sample(s)*3,-r_sample(s)*3,-r_sample(s)];
-                            line (x_plotn, y_plotn,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            text(1000*(x_sample(s)+x_sample(s+1))/2, -1000*3.5*max(r_sample),...
-                                ['Liner',num2str(NUM_Liner_note)],'FontSize',9,...
-                                'HorizontalAlignment','center',...
-                                'Parent',hAxes);
-                            NUM_Liner_note=NUM_Liner_note+1;
-                    else
-                            x_plot=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plot=1000*[r_sample(s),    r_sample(s)*1.2,  r_sample(s)*1.2, r_sample(s)];
-                            line (x_plot, y_plot,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes); 
-                            x_plotn=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plotn=1000*[-r_sample(s),-r_sample(s)*1.2,-r_sample(s)*1.2, -r_sample(s)];
-                            line (x_plotn, y_plotn,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            text(1000*(x_sample(s)+x_sample(s+1))/2, -1000*3.5*max(r_sample),...
-                                ['Liner',num2str(NUM_Liner_note)],'FontSize',9,...
-                                'HorizontalAlignment','center',...
-                                'Parent',hAxes);
-                            NUM_Liner_note=NUM_Liner_note+1;
-                    end     
-            else
-                    if Liner_config(NUM_Liner_note,5)==0
-                            x_plot=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plot=1000*[r_sample(s),    r_sample(s)*3,  r_sample(s)*3, r_sample(s)];
-                            x_plot2=1000*[x_sample(s), x_sample(s+1)];
-                            y_plot2=1000*[r_sample(s)*1.3,  r_sample(s)*1.3];                            
-                            line (x_plot, y_plot,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            line (x_plot2, y_plot2,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','--',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            x_plotn=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plotn=1000*[-r_sample(s),    -r_sample(s)*3,  -r_sample(s)*3, -r_sample(s)];
-                            x_plot2n=1000*[x_sample(s), x_sample(s+1)];
-                            y_plot2n=1000*[-r_sample(s)*1.3,  -r_sample(s)*1.3];                            
-                            line (x_plotn, y_plotn,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            line (x_plot2n, y_plot2n,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','--',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            text(1000*(x_sample(s)+x_sample(s+1))/2, -1000*3.5*max(r_sample),...
-                                ['Liner',num2str(NUM_Liner_note)],'FontSize',9,...
-                                'HorizontalAlignment','center',...
-                                'Parent',hAxes);
-                            NUM_Liner_note=NUM_Liner_note+1;
-                    else
-                            x_plot=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plot=1000*[r_sample(s),    r_sample(s)*1.5,  r_sample(s)*1.5, r_sample(s)];
-                            x_plot2=1000*[x_sample(s), x_sample(s+1)];
-                            y_plot2=1000*[r_sample(s)*1.3,  r_sample(s)*1.3];                            
-                            line (x_plot, y_plot,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            line (x_plot2, y_plot2,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','--',...
-                                  'Color','k',...
-                                  'Parent',hAxes); 
-                            x_plotn=1000*[x_sample(s), x_sample(s), x_sample(s+1),  x_sample(s+1)];
-                            y_plotn=1000*[-r_sample(s),    -r_sample(s)*1.5,  -r_sample(s)*1.5, -r_sample(s)];
-                            x_plot2n=1000*[x_sample(s), x_sample(s+1)];
-                            y_plot2n=1000*[-r_sample(s)*1.3,  -r_sample(s)*1.3];                            
-                            line (x_plotn, y_plotn,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','-',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            line (x_plot2n, y_plot2n,...
-                                  'LineWidth', 1,...
-                                  'LineStyle','--',...
-                                  'Color','k',...
-                                  'Parent',hAxes);
-                            text(1000*(x_sample(s)+x_sample(s+1))/2, -1000*3.5*max(r_sample),...
-                                ['Liner',num2str(NUM_Liner_note)],'FontSize',9,...
-                                'HorizontalAlignment','center',...
-                                'Parent',hAxes);
-                            NUM_Liner_note=NUM_Liner_note+1;
-                    end
-            end
-        end 
-
-end
-hold off
-%--------------------------------------   
-set(hAxes,'xlim',1000*[x_min, x_min+axes_W]);
-set(hAxes,'box','on');
-grid on
-set(hAxes,'ylim',1000*[y_min, y_min+axes_H]);
-text(1000*(x_sample(1)-W./8), 0, 'inlet','FontSize',15,...
-    'interpreter','latex','HorizontalAlignment','center',...
-    'Parent',hAxes);
-text(1000*(x_sample(end)+W.*5/32), 0, 'outlet','FontSize',15,...
-    'interpreter','latex','HorizontalAlignment','center',...
-    'Parent',hAxes);
-xlabel(hAxes,'x~ [mm]','Color','k','Interpreter','LaTex');
-ylabel(hAxes,'r~ [mm]','Color','k','Interpreter','LaTex');  
-% End changing by Dong Yang
-% ------------------------------
-
-% --- creat one txt file including the combustor shape
-function Fcn_CUI_INI_CD_creat_txt_file 
-% example of combustor information
-% cambridge combustor information
-global CI
-% ---------------------------------
-l_sample    = [200 300 350]./1000;
-ro_sample   = [50 17.5 35]./1000;
-ri_sample   = [4 12.5 0]./1000; 
-r_sample    = (ro_sample.^2-ri_sample.^2).^0.5;
-x_sample    = [0,cumsum(l_sample)];
-r_sample    = [r_sample,r_sample(end)];
-index       = [0 0 1 0];
-data        = cat(1,x_sample,r_sample,index);
-% ---------------------------------
-currentFolder   = pwd;
-currentFolder   = fullfile(currentFolder,CI.SD.name_program,'CD_example.txt');
-fid             = fopen(currentFolder,'wt');
-data_title      = {'x[m]','r[m]','Section index'};
-fprintf(fid,'%s\b',data_title{1:end});
-fprintf(fid,'\n');
-fprintf(fid,'%6.5f\b%6.5f\b%6.0f\n',data);
-fclose(fid);
-
-% --- Update the data when clicking 'OK' or 'Apply'
+% --- Update the data 
 function Fcn_GUI_INI_CD_Update_Data(varargin)
 hObject = varargin{1};
 handles = guidata(hObject);
 global CI
-%% Begin changing by Dong Yang (Make sure geometry settings cannot be changed after including dampers)
-% Check if geometry data exists
-Damper_NUM=CI.CD.NUM_HR+CI.CD.NUM_Liner;
-% Make sure combustor geometry cannot be changed after adding
-% dampers. However, users are allowed to continue adding dampers
-
-if Damper_NUM==0   % Case before including damper(s), initialise the data according to the combustor type
-   CI.CD.pop_CD_type=get(handles.pop_CB_type,'Value');
-    switch CI.CD.pop_CD_type    
-      case 1
+CI.CD.pop_CD_type=get(handles.pop_CB_type,'Value');
+switch CI.CD.pop_CD_type    
+    case 1
         l(1)    = 0;
         l(2)    = str2num(get(handles.ed_US,'string'));
         l(3)    = str2num(get(handles.ed_DS,'string'));
         r       = str2num(get(handles.ed_Diameter,'string'))./1000;
+        indexHA_mean = get(handles.checkbox1,'value');
+        indexHA_pert = get(handles.checkbox2,'value');
         CI.CD.x_sample = cumsum(l)./1000;
-        CI.CD.r_sample = 0*CI.CD.x_sample + r;              
-        CI.CD.index = [0 1 0];
-       case 2
+        CI.CD.r_sample = 0*CI.CD.x_sample + r;
+        if indexHA_mean == 1 && indexHA_pert == 1
+            CI.CD.SectionIndex = [0 11 0];             % with heat addition and heat perturbations
+        elseif indexHA_mean == 1 && indexHA_pert == 0
+            CI.CD.SectionIndex = [0 10 0];             % with heat addition but heat perturbations
+        elseif indexHA_mean == 0 && indexHA_pert == 0
+            CI.CD.SectionIndex = [0 0 0];              % without heat addition
+        end
+        CI.CD.TubeIndex = [0 0 0]; 
+    case 2
         data_cell = get(handles.uitable_DM,'data');
-        CI.CD.x_sample= cell2mat(data_cell(1,:))./1000;
-        CI.CD.r_sample = cell2mat(data_cell(2,:))./1000;
-        CI.CD.index = cell2mat(data_cell(3,:));
-     otherwise
+        CI.CD.x_sample          = cell2mat(data_cell(1,:))./1000;
+        CI.CD.r_sample          = cell2mat(data_cell(2,:))./1000;
+        CI.CD.SectionIndex      = cell2mat(data_cell(3,:));
+        CI.CD.TubeIndex         = cell2mat(data_cell(4,:));
+    otherwise
         % Code for when there is no match.
-    end
- CI.CD.pop_CD_type = get(handles.pop_CB_type,'Value');
-else       % Case after including damper(s)
-            set(handles.pop_CB_type,'enable','off'); 
-            set(handles.ed_US,'enable','off');
-            set(handles.ed_DS,'enable','off');
-            set(handles.ed_Diameter,'enable','off');
-            set(handles.pb_load,'enable','off');
 end
-Fcn_GUI_INI_CD_check_flame_existence
+CI.CD.pop_CD_type = get(handles.pop_CB_type,'Value');
+
+%Compute the length downstream of a flame. If a flame is at the end of a section, use the min to set that to 0
+%index_flame =   find(CI.CD.SectionIndex==11);
+%CI.CD.dowst_of_heat_lengths = CI.CD.x_sample(min(index_flame + 1,end)) - CI.CD.x_sample(index_flame);
+%CI.CD.index_flame = index_flame; % This is needed for other functions
+
 %
 assignin('base','CI',CI);                   % save the current information to the workspace
-%% End changing by Dong Yang
 
-try
-    ExampleGUI = handles.ExampleGUI;
-    if(ishandle(ExampleGUI))
-       ExampleHandles = guidata(ExampleGUI);
-       changeExample  = ExampleHandles.pb_TP;
-       set(changeExample, 'Enable', 'on');
-    end
-catch
-end
-% Obtain handles using GUIDATA with the caller's handle 
+
+function Fcn_GUI_INI_CD_Update_Main_GUI(varargin)
+hObject = varargin{1};
+handles = guidata(hObject);
 main = handles.MainGUI;
+global CI
 % Obtain handles using GUIDATA with the caller's handle 
 if(ishandle(main))
     mainHandles = guidata(main);
-    changeMain = mainHandles.INI_TP;
-    set(changeMain, 'Enable', 'on');
+    %%% add a questdlg:
+    selection = questdlg('Do you want to use passsive dampers?',...
+      'Passive damper',...
+      'Yes','No','No'); 
+    switch selection 
+        case 'Yes'
+            changeMain = mainHandles.INI_PD;
+            set(changeMain, 'Enable', 'on');
+            set(changeMain, 'Visible', 'on');
+            changeMain = mainHandles.INI_CD;
+            set(changeMain, 'Enable', 'off');
+            set(changeMain, 'Visible', 'off');
+        case 'No'
+            changeMain = mainHandles.INI_TP;
+            set(changeMain, 'Enable', 'on');
+            changeMain = mainHandles.INI_PD;
+            set(changeMain, 'Visible', 'off');
+    end
     String_Listbox=get(mainHandles.listbox_Info,'string');
     ind=find(ismember(String_Listbox,'<HTML><FONT color="blue">Information 1:'));
     nLength=size(String_Listbox);
@@ -1186,11 +970,14 @@ if(ishandle(main))
     String_Listbox{indStart+1}=['<HTML><FONT color="blue">Information 1:'];
     String_Listbox{indStart+2}=['<HTML><FONT color="blue">Combustor dimension:'];
     String_Listbox{indStart+3}=['The combustor has ' num2str(length(CI.CD.r_sample)-1) ' sections'];
-%     String_Listbox{indStart+4}=['The flame is located after section ' num2str(CI.CD.index_flame-1)];
+%     String_Listbox{indStart+4}=['The flame is located after section ' num2str(CI.CD.SectionIndex_flame-1)];
+% try
     String_Listbox{indStart+4}=['The x-coordinates are: '];
     String_Listbox{indStart+5}=[num2str(CI.CD.x_sample) ' m'];
     String_Listbox{indStart+6}=['The r-coordinates are: '];
     String_Listbox{indStart+7}=[num2str(1000.*CI.CD.r_sample) ' mm'];
+% catch 
+% end
     set(mainHandles.listbox_Info,'string',String_Listbox,'value',1);
 end
 guidata(hObject, handles);
@@ -1198,55 +985,35 @@ guidata(hObject, handles);
 %-----------------------------------end------------------------------------
 
 
-% --- Executes on selection change in pop_Damper_type.
-function pop_Damper_type_Callback(hObject, eventdata, handles)
-% hObject    handle to pop_Damper_type (see GCBO)
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles=guidata(hObject);
-pop_Damper_type=get(hObject,'Value');
-switch pop_Damper_type
-    case 1
-            % Nothing happens   
-    case 2      
-        GUI_INI_CD_Damper('GUI_INI_CD', handles.figure);
-%% Begin changing by Dong Yang (Update the current figure and listbox_Info after including dampers)
-        Fcn_GUI_INI_CD_Update_Data(hObject, eventdata, handles);
-        handles = guidata(hObject);
-        guidata(hObject, handles);
-        Fcn_GUI_INI_CD_Plot_CD_Shape(hObject);  % Update figures in the current plot
-        
-        % Update the table
-        global CI
-        data_num(1,:)   = CI.CD.x_sample.*1000;
-        data_num(2,:)   = CI.CD.r_sample.*1000;
-        data_num(3,:)   = CI.CD.index;
-        data_cell       = num2cell(data_num);
-        set(handles.uitable_DM,'data',data_cell);        
+handles = guidata(hObject);
+hFontsize1  = handles.FontSize(1);
+Fig     = figure;
+set(Fig,'units','points')
+posFig = get(handles.figure,'position');
+copyobj(handles.axes1, Fig);
+hAxes = get(Fig,'children');
+set(hAxes,      'units','points',...
+                'position',[60 60 400 150])
+posAxes = get(hAxes,'position');
+posAxesOuter = [0 0 800 400];
+set(Fig,        'units','points',...
+                'position', [posFig(1)+0.5*posFig(3)-0.5*posAxesOuter(3),...
+                             posFig(2)+0.5*posFig(4)-0.5*posAxesOuter(4),...
+                             posAxesOuter(3:4)])
+% -------------legend ---------------
+newline = char(10);
+legend1 = ['with mean heat addition', newline, 'and heat perturbations'];
+legend2 = ['with mean heat addition', newline, 'but no heat perturbations'];
+hlegend = legend(hAxes,...
+                        'inlet','outlet',...
+                        legend1,...
+                        legend2);
+set(hlegend,'fontsize',hFontsize1,'location','northeastoutside');
+set(hAxes,'position',posAxes)
 
-        % Make sure combustor geometry cannot be changed after adding
-        % dampers. However, users are allowed to continue adding dampers
-        Damper_NUM=CI.CD.NUM_HR+CI.CD.NUM_Liner;
-         if Damper_NUM>0   % Case after including damper(s), initialise the data according to the combustor type
-            set(handles.pop_CB_type,'enable','off'); 
-            set(handles.ed_US,'enable','off');
-            set(handles.ed_DS,'enable','off');
-            set(handles.ed_Diameter,'enable','off');
-            set(handles.pb_load,'enable','off');
-         end
-          
-%% End changing by Dong Yang
- end
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function pop_Damper_type_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to pop_Damper_type (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+ 
