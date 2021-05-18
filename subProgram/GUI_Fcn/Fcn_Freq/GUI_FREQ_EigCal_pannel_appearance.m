@@ -97,10 +97,6 @@ switch CI.IsRun.GUI_FREQ_EigCal
                 set(handles.ObjEditVisible_pRatio,      'visible','off');
                 
             case 22                             % nonlinear flame model
-                % Begin adding by DY 17/Feb/2020
-                set(handles.ObjEditVisible_uRatio,      'visible','on');
-                set(handles.ObjEditVisible_pRatio,      'visible','off');
-                % end adding by DY 17/Feb/2020
                 HP = CI.FM.HP{CI.FM.indexMainHPinHp};
                 CI.EIG.FDF.uRatioSp             = HP.FMEXP.uRatio;
                 CI.EIG.FDF.uRatioNum            = length(CI.EIG.FDF.uRatioSp);

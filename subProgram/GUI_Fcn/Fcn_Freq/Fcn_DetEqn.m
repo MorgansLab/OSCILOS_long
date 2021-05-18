@@ -44,7 +44,7 @@ end
 A1_minus        = 1;
 A1_plus         = R1.*A1_minus;
 E1              = 0;
-Array_LeftBD    = [A1_plus, A1_minus, E1].';
+Array_LeftBD    = [A1_plus, A1_minus, E1]';
 %
 D1End           = diag([    exp(-s*tau_plus(end)),...
                             exp( s*tau_minus(end)),...
